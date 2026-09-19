@@ -26,7 +26,9 @@ private enum class Page(val title: String, val icon: ImageVector) {
     DATA("Dados", Icons.Default.Storage), HISTORY("Histórico", Icons.Default.History), STRATEGY("Estratégia", Icons.Default.Tune), SETTINGS("Configurações", Icons.Default.Settings)
 }
 
-@Composable fun AlcadaApp() {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AlcadaApp() {
     var page by rememberSaveable { mutableStateOf(Page.DASHBOARD) }
     Scaffold(
         topBar = { TopAppBar(title = { Column { Text("ALÇADA", fontWeight = FontWeight.Black); Text("Pesquisa quantitativa local • Ricardo Bandeira", style = MaterialTheme.typography.labelSmall, color = Analytic) } }) },
