@@ -45,4 +45,14 @@ class MonteCarloTest {
         assertEquals(0.0, result.medianNetProfit, 0.0)
         assertEquals(0.0, result.profitableShare, 0.0)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejeita bloco invalido`() {
+        MonteCarlo.analyze(listOf(Trade(1, 2, 1.0, true)), blockSize = 0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejeita resultado nao finito`() {
+        MonteCarlo.analyze(listOf(Trade(1, 2, Double.NaN, false)))
+    }
 }
