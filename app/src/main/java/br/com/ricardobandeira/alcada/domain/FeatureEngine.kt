@@ -36,6 +36,7 @@ object FeatureEngine {
     }
 
     fun aggregate(candles: List<Candle>, factor: Int): List<Candle> {
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         require(factor > 0) { "O fator do período gráfico deve ser positivo." }
         if (factor == 1) return candles
         return candles.chunked(factor).filter { it.size == factor }.map { group ->
