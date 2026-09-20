@@ -40,14 +40,18 @@ class CsvCandleReader {
                         "OHLC inconsistente na linha $lineNumber"
                     }
 
+                    val volume = parts.getOrNull(5)?.takeIf { it.isNotBlank() }?.let { number(it) ?: throw IllegalArgumentException("Volume inválido na linha $lineNumber.") } ?: 0.0
+                    val spread = parts.getOrNull(6)?.takeIf { it.isNotBlank() }?.let { number(it) ?: throw IllegalArgumentException("Spread inválido na linha $lineNumber.") } ?: 0.0
+                    require(volume >= 0.0) { "Volume negativo na linha $lineNumber." }
+                    require(spread >= 0.0) { "Spread negativo na linha $lineNumber." }
                     chunk += Candle(
                         epochMillis = timestamp,
                         open = open,
                         high = high,
                         low = low,
                         close = close,
-                        volume = parts.getOrNull(5)?.takeIf { it.isNotBlank() }?.let { number(it) ?: throw IllegalArgumentException("Volume inválido na linha $lineNumber.") } ?: 0.0,
-                        spread = parts.getOrNull(6)?.takeIf { it.isNotBlank() }?.let { number(it) ?: throw IllegalArgumentException("Spread inválido na linha $lineNumber.") } ?: 0.0
+                        volume = volume,
+                        spread = spread
                     )
                 }
                 if (chunk.isEmpty()) break
