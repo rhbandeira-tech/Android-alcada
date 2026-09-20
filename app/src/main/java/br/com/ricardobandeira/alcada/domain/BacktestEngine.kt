@@ -80,6 +80,7 @@ object BacktestEngine {
     }
 
     private fun matches(rule: EntryRule, candle: Candle, previous: Candle?): Boolean {
+        require(rule.threshold.isFinite()) { "O limite da regra precisa ser um número válido." }
         val feature = FeatureEngine.candle(candle, previous)
         val value = when (rule.feature) {
             "wickBodyRatio" -> feature.wickBodyRatio
