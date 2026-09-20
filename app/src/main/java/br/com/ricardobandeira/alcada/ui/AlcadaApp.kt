@@ -78,6 +78,9 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
     val strategies by vm.strategies.collectAsState()
     var intensive by rememberSaveable { mutableStateOf(false) }
     var candidates by rememberSaveable { mutableFloatStateOf(2_000f) }
+    val processors = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+    var threads by rememberSaveable { mutableFloatStateOf(minOf(2, processors).toFloat()) }
+    var memoryMb by rememberSaveable { mutableFloatStateOf(256f) }
     LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) {
         item { Hero("Descobrir padrões", "Pavios, movimento e validação dentro e fora da amostra") }
         item { DatasetSelector(datasets, selected, vm::selectDataset) }
@@ -93,11 +96,17 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
                     }
                     Text("Orçamento: ${candidates.toInt()} candidatos")
                     Slider(candidates, { candidates = it }, valueRange = 500f..10_000f, steps = 18, enabled = !state.running)
-                    if (intensive) Text("Amplia o orçamento da pesquisa local. Você pode cancelar a qualquer momento.", color = Pending, style = MaterialTheme.typography.bodySmall)
+                    if (intensive) {
+                        Text("Processadores: ${threads.toInt()} de $processors")
+                        Slider(threads, { threads = it }, valueRange = 1f..processors.toFloat(), steps = (processors - 2).coerceAtLeast(0), enabled = !state.running)
+                        Text("Memória reservada: ${memoryMb.toInt()} MB")
+                        Slider(memoryMb, { memoryMb = it }, valueRange = 128f..1024f, steps = 6, enabled = !state.running)
+                        Text("A reserva define o teto de configuração da pesquisa; o Android continua controlando os recursos reais do aparelho.", color = Pending, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
-        item { ActionPanel(state, "Pesquisa local", "${candidates.toInt()} candidatos • validação temporal • busca evolutiva", { vm.runResearch(ResearchOptions(candidates.toInt(), intensive = intensive)) }, vm::cancelResearch) }
+        item { ActionPanel(state, "Pesquisa local", "${candidates.toInt()} candidatos • validação temporal • busca evolutiva", { vm.runResearch(ResearchOptions(candidates.toInt(), intensive = intensive, threads = if (intensive) threads.toInt() else null, memoryMb = if (intensive) memoryMb.toInt() else null)) }, vm::cancelResearch) }
         if(strategies.isNotEmpty()) {
             item { SectionTitle("Descobertas persistidas", "Classificação considera robustez, expectativa e desempenho fora da amostra") }
             items(strategies) { StrategyCard(it) }
