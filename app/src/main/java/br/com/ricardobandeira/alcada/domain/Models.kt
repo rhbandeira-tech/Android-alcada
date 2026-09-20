@@ -44,7 +44,12 @@ data class StrategyDefinition(
         require(entries.isNotEmpty()) { "A estratégia precisa de pelo menos uma regra de entrada." }
     }
 }
-data class Trade(val entryTime: Long, val exitTime: Long, val pnl: Double, val won: Boolean)
+data class Trade(val entryTime: Long, val exitTime: Long, val pnl: Double, val won: Boolean) {
+    init {
+        require(exitTime >= entryTime) { "A saída não pode ocorrer antes da entrada." }
+        require(pnl.isFinite()) { "O resultado da operação precisa ser finito." }
+    }
+}
 data class BacktestResult(
     val metrics: BacktestMetrics,
     val trades: List<Trade>,
