@@ -332,6 +332,19 @@ private fun Metrics(metrics: BacktestMetrics) {
                 Text("Leitura histórica; robustez exige validação fora da amostra e estabilidade em diferentes períodos.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        val performanceReading = if (metrics.expectancy > 0.0 && metrics.profitFactor > 1.0) "Desempenho histórico positivo: expectativa e fator de lucro apontam na mesma direção." else "Desempenho histórico ainda não apresenta confirmação conjunta entre expectativa e fator de lucro."
+        val riskReading = if (metrics.maxDrawdown < 0.0) "Risco observado: a pior retração foi ${number(metrics.maxDrawdown)}; compare-a com o resultado líquido ${number(metrics.netProfit)}." else "Não foi observada retração negativa relevante nesta amostra."
+        val stabilityReading = if (metrics.trades >= 100) "Estabilidade: há ${metrics.trades} operações para segmentar períodos e procurar degradação temporal." else "Estabilidade: somente ${metrics.trades} operações; aumente a amostra antes de confiar em pequenas diferenças."
+        val evidenceReading = edge?.let { if (it > 0.0) "Evidência: acerto ${pct(it)} acima do equilíbrio; confirme se essa margem persiste fora da amostra." else "Evidência: acerto ${pct(-it)} abaixo do equilíbrio; o histórico não cobre o ponto mínimo calculado." } ?: "Evidência: ponto de equilíbrio indisponível; use OOS e estabilidade temporal como confirmação."
+        Card(colors = CardDefaults.cardColors(containerColor = Analytic.copy(alpha = .07f))) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Leitura operacional", fontWeight = FontWeight.Bold)
+                Text("Desempenho • $performanceReading", style = MaterialTheme.typography.bodySmall)
+                Text("Risco • $riskReading", style = MaterialTheme.typography.bodySmall)
+                Text("Estabilidade • $stabilityReading", style = MaterialTheme.typography.bodySmall)
+                Text("Evidência • $evidenceReading", style = MaterialTheme.typography.bodySmall)
+            }
+        }
         Text("Toque em qualquer número para entender o que ele mede.", style = MaterialTheme.typography.labelSmall, color = Analytic)
     }
     open?.let { metric -> AlertDialog(onDismissRequest = { open = null }, title = { Text(metric) }, text = { Text(metricExplanation(metric, metrics)) }, confirmButton = { TextButton(onClick = { open = null }) { Text("Entendi") } }) }
