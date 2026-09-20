@@ -16,7 +16,7 @@ class AlcadaApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val cleanup = PeriodicWorkRequestBuilder<RawDataCleanupWorker>(1, TimeUnit.DAYS)
-            .setConstraints(Constraints.Builder().setRequiresBatteryNotLow(true).setRequiredNetworkType(NetworkType.NOT_REQUIRED).build())
+            .setConstraints(Constraints.Builder().setRequiresBatteryNotLow(true).setRequiresStorageNotLow(true).setRequiredNetworkType(NetworkType.NOT_REQUIRED).build())
             .build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("raw-data-cleanup", ExistingPeriodicWorkPolicy.KEEP, cleanup)
     }
