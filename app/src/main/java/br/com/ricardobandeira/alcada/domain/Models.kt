@@ -43,6 +43,7 @@ data class StrategyDefinition(
         require(id.isNotBlank() && name.isNotBlank()) { "A estratégia precisa de identificação e nome." }
         require(timeframeMinutes > 0) { "O período gráfico precisa ser positivo." }
         require(entries.isNotEmpty()) { "A estratégia precisa de pelo menos uma regra de entrada." }
+        require(symbol.isNotBlank()) { "O ativo da estratégia não pode ficar vazio." }
     }
 }
 data class Trade(val entryTime: Long, val exitTime: Long, val pnl: Double, val won: Boolean) {
