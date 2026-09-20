@@ -480,7 +480,7 @@ private fun scriptRule(encoded: String, language: String): String? {
     val feature = p.getOrNull(0) ?: return null
     val op = p.getOrNull(1) ?: return null
     val value = p.getOrNull(2)?.toDoubleOrNull()?.toString() ?: return null
-    if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio")) feature + " " + op + " " + value else null
+    if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio","atrRangeRatio","candleSequence","levelDistanceRatio")) feature + " " + op + " " + value else null
     val expression = when (feature) {
         "wickBodyRatio" -> "(math.max(high-open, high-close)/math.max(math.abs(close-open),syminfo.mintick))"
         "bodyRangeRatio" -> "(math.abs(close-open)/math.max(high-low,syminfo.mintick))"
@@ -488,6 +488,9 @@ private fun scriptRule(encoded: String, language: String): String? {
         "momentumRangeRatio" -> "(math.abs(close-close[1])/math.max(high-low,syminfo.mintick))"
         "gapRangeRatio" -> "(math.abs(open-close[1])/math.max(high-low,syminfo.mintick))"
         "accelerationRangeRatio" -> "(math.abs((close-close[1])-(close[1]-close[2]))/math.max(high-low,syminfo.mintick))"
+        "atrRangeRatio" -> "(ta.atr(14)/math.max(high-low,syminfo.mintick))"
+        "candleSequence" -> "((close>open?1.0:-1.0)+(close[1]>open[1]?1.0:-1.0)+(close[2]>open[2]?1.0:-1.0))"
+        "levelDistanceRatio" -> "(math.min(math.abs(close-ta.lowest(low,20)),math.abs(ta.highest(high,20)-close))/math.max(high-low,syminfo.mintick))"
         else -> return null
     }
     return expression + " " + op + " " + value
