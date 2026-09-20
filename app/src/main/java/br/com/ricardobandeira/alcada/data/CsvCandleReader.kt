@@ -28,14 +28,14 @@ class CsvCandleReader {
 
                     val timestamp = parseTimestamp(parts[0])
                         ?: throw IllegalArgumentException("Timestamp inválido na linha $lineNumber: ${parts[0]}")
-                    val open = parts[1].toDoubleOrNull()
-                        ?: throw IllegalArgumentException("Open inválido na linha $lineNumber: ${parts[1]}")
-                    val high = parts[2].toDoubleOrNull()
-                        ?: throw IllegalArgumentException("High inválido na linha $lineNumber: ${parts[2]}")
-                    val low = parts[3].toDoubleOrNull()
-                        ?: throw IllegalArgumentException("Low inválido na linha $lineNumber: ${parts[3]}")
-                    val close = parts[4].toDoubleOrNull()
-                        ?: throw IllegalArgumentException("Close inválido na linha $lineNumber: ${parts[4]}")
+                    val open = number(parts[1])
+                        ?: throw IllegalArgumentException("Abertura inválida na linha $lineNumber.")
+                    val high = number(parts[2])
+                        ?: throw IllegalArgumentException("Máxima inválida na linha $lineNumber.")
+                    val low = number(parts[3])
+                        ?: throw IllegalArgumentException("Mínima inválida na linha $lineNumber.")
+                    val close = number(parts[4])
+                        ?: throw IllegalArgumentException("Fechamento inválido na linha $lineNumber.")
                     require(high >= maxOf(open, close, low) && low <= minOf(open, close, high)) {
                         "OHLC inconsistente na linha $lineNumber"
                     }
@@ -46,8 +46,8 @@ class CsvCandleReader {
                         high = high,
                         low = low,
                         close = close,
-                        volume = parts.getOrNull(5)?.toDoubleOrNull() ?: 0.0,
-                        spread = parts.getOrNull(6)?.toDoubleOrNull() ?: 0.0
+                        volume = parts.getOrNull(5)?.takeIf { it.isNotBlank() }?.let { number(it) ?: throw IllegalArgumentException("Volume inválido na linha $lineNumber.") } ?: 0.0,
+                        spread = parts.getOrNull(6)?.takeIf { it.isNotBlank() }?.let { number(it) ?: throw IllegalArgumentException("Spread inválido na linha $lineNumber.") } ?: 0.0
                     )
                 }
                 if (chunk.isEmpty()) break
@@ -55,6 +55,9 @@ class CsvCandleReader {
             }
         }
     }
+
+    private fun number(value: String): Double? =
+        value.trim().removeSurrounding("\"").toDoubleOrNull()?.takeIf { it.isFinite() }
 
     private fun parseTimestamp(value: String): Long? {
         val clean = value.trim().removeSurrounding("\"")
