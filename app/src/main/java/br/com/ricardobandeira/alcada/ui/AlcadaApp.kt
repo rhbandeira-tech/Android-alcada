@@ -349,6 +349,7 @@ private fun ruleDescription(encoded: String): String {
         "spreadRangeRatio" -> "spread/amplitude"
         "sessionUtc" -> "sessão UTC"
         "atrRangeRatio" -> "volatilidade ATR/amplitude"
+        "candleSequence" -> "sequência de velas"
         else -> "condição quantitativa"
     }
     val operator = when (parts.getOrNull(1)) { ">=" -> "maior ou igual a"; "<=" -> "menor ou igual a"; ">" -> "maior que"; "<" -> "menor que"; else -> parts.getOrNull(1).orEmpty() }
