@@ -286,6 +286,7 @@ private fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit
 
 @Composable
 private fun StrategyCard(strategy: StrategyEntity) {
+    var details by remember { mutableStateOf(false) }
     val data = strategy.definitionJson.split('|')
     val profitFactor = data.getOrNull(3)?.toDoubleOrNull()?.let(::number) ?: "—"
     Card {
@@ -332,9 +333,11 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 }
                 Text(rationale, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Desempenho histórico não garante resultados futuros. A validação fora da amostra reduz, mas não elimina, o risco de sobreajuste.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { details = true }) { Text("Ver explicação completa") }
             }
         }
     }
+    if (details) AlertDialog(onDismissRequest = { details = false }, title = { Text("Como esta estratégia funciona") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(strategy.name, fontWeight = FontWeight.Bold); Text("Evidência", fontWeight = FontWeight.SemiBold); Text("Dentro da amostra ${pct(data.getOrNull(1))} • fora da amostra ${pct(data.getOrNull(2))} • robustez ${pct(data.getOrNull(6))}."); Text("Pontos de atenção", fontWeight = FontWeight.SemiBold); Text(if (data.getOrNull(8) == "true") "Há sinais de fragilidade ou sobreajuste. Exija mais dados e novas janelas." else "Sem alerta forte pelos critérios atuais; perdas e mudanças de regime continuam possíveis."); Text("Resultados históricos não garantem desempenho futuro.") } }, confirmButton = { TextButton(onClick = { details = false }) { Text("Fechar") } })
 }
 
 private fun ruleDescription(encoded: String): String {
