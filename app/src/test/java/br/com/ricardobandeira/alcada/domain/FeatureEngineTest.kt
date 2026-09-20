@@ -17,4 +17,20 @@ class FeatureEngineTest {
         val candles = listOf(Candle(0, 10.0, 11.0, 9.0, 10.0), Candle(1, 10.0, 13.0, 8.0, 12.0), Candle(2, 12.0, 101.0, 1.0, 50.0))
         assertEquals(5.0, FeatureEngine.atr(candles, 10, 2), 1e-9)
     }
+
+    @Test fun `volatilidade respeita fronteira exclusiva`() {
+        val candles = listOf(
+            Candle(0, 100.0, 101.0, 99.0, 100.0),
+            Candle(1, 100.0, 102.0, 99.0, 101.0),
+            Candle(2, 101.0, 103.0, 100.0, 102.0),
+            Candle(3, 102.0, 200.0, 50.0, 180.0)
+        )
+        val beforeShock = FeatureEngine.volatility(candles, 10, 3)
+        val withShock = FeatureEngine.volatility(candles, 10, 4)
+        org.junit.Assert.assertTrue(withShock > beforeShock)
+    }
+
+    @Test fun `volatilidade com uma vela e neutra`() {
+        assertEquals(0.0, FeatureEngine.volatility(listOf(Candle(0, 10.0, 11.0, 9.0, 10.0)), 5), 0.0)
+    }
 }
