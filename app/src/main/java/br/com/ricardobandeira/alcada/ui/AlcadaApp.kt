@@ -342,12 +342,13 @@ private fun LineChart(title: String, values: List<Double>, color: Color) {
 
 @Composable
 private fun BarChart(title: String, values: List<Bucket>) {
+    var selected by remember { mutableStateOf<Bucket?>(null) }
     ChartCard(title) {
         if (values.isEmpty()) Text("Amostra insuficiente", color = Pending) else {
             val maxValue = max(1e-9, values.maxOf { kotlin.math.abs(it.value) })
             LazyRow(Modifier.fillMaxWidth().height(132.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                 items(values) { bucket ->
-                    Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.width(64.dp).clickable { selected = bucket }, horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(number(bucket.value), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                         Surface(Modifier.width(46.dp).height((82 * kotlin.math.abs(bucket.value) / maxValue).toFloat().dp), color = if (bucket.value >= 0) Positive else Negative) {}
                         Text(bucket.label.take(9), style = MaterialTheme.typography.labelSmall, maxLines = 1)
@@ -358,6 +359,8 @@ private fun BarChart(title: String, values: List<Bucket>) {
             val worst = values.minByOrNull { it.value }
             Text("Faixa observada: " + number(values.minOf { it.value }) + " até " + number(values.maxOf { it.value }) + " • " + values.size + " grupos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Melhor: " + (best?.label ?: "—") + " " + number(best?.value ?: Double.NaN) + " • Pior: " + (worst?.label ?: "—") + " " + number(worst?.value ?: Double.NaN), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            selected?.let { bucket -> Text("Selecionado: " + bucket.label + " • valor " + number(bucket.value), color = if (bucket.value >= 0) Positive else Negative, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall) }
+            Text("Toque numa barra para ver o grupo e o valor exatos.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
