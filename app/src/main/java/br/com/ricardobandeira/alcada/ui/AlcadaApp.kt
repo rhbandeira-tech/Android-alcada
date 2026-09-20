@@ -444,8 +444,10 @@ private fun StrategyCard(strategy: StrategyEntity, rank: Int? = null, champion: 
 private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) {
     var format by remember { mutableStateOf<String?>(null) }
     val clipboard = LocalClipboardManager.current
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        listOf("Lua", "MQL5", "TradingView").forEach { language ->
+    Text("Exportar estratégia", fontWeight = FontWeight.SemiBold)
+    Text("Gere uma base de implementação e copie para sua plataforma. Regras não convertidas ficam bloqueadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(listOf("Lua", "MQL5", "TradingView")) { language ->
             AssistChip(onClick = { format = language }, label = { Text(language) }, leadingIcon = { Icon(Icons.Default.Code, null) })
         }
     }
