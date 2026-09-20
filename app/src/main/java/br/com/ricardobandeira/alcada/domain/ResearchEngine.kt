@@ -28,7 +28,13 @@ class ResearchEngine {
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             // Signals use only the current/past candle; the future is consulted exclusively by the backtest.
             val signals = (1 until candles.size - expiration).asSequence()
-                .filter { FeatureEngine.candle(candles[it], candles[it - 1]).wickBodyRatio >= ratio }
+                .filter {
+                    val feature = FeatureEngine.candle(candles[it], candles[it - 1])
+                    val directionalClose = if (direction == Direction.CALL) feature.closeLocation >= closeLocation
+                        else feature.closeLocation <= 1.0 - closeLocation
+                    feature.wickBodyRatio >= ratio && feature.bodyRangeRatio <= bodyLimit && directionalClose &&
+                        if (direction == Direction.CALL) feature.lowerWick >= feature.upperWick else feature.upperWick > feature.lowerWick
+                }
                 .map { it to direction }.take(5_000).toList()
             val split = (candles.size * .7).toInt()
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
@@ -50,7 +56,11 @@ class ResearchEngine {
                 val stability = stableFolds / 3.0
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .55 + stability * .35 + sampleFactor * .10).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(ratio)}×", Market.BINARY_OPTIONS,
-                    "dataset", 1, direction, listOf(EntryRule("wickBodyRatio", ">=", ratio)), ExitRule(bars = expiration), budget.seed)
+                    "dataset", 1, direction, listOf(
+                        EntryRule("wickBodyRatio", ">=", ratio),
+                        EntryRule("bodyRangeRatio", "<=", bodyLimit),
+                        EntryRule("closeLocation", if (direction == Direction.CALL) ">=" else "<=", if (direction == Direction.CALL) closeLocation else 1.0 - closeLocation)
+                    ), ExitRule(bars = expiration), budget.seed)
                 val result = EvaluatedStrategy(strategy, ins, oos.winRate, robustness,
                     if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
                     gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5)
