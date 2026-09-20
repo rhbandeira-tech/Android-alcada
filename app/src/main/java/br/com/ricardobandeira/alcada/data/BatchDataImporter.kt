@@ -13,6 +13,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
     fun import(sources: List<ImportSource>, output: File, onProgress: (Int, Int, String) -> Unit = { _,_,_ -> }): ImportSummary {
         require(sources.isNotEmpty()) { "Selecione pelo menos um arquivo." }
         workDir.mkdirs()
+        val sessionDir = File(workDir, "sessao_" + java.util.UUID.randomUUID()).apply { mkdirs() }
         val canonical = mutableListOf<File>(); val issues = mutableListOf<ImportIssue>()
         var csvFiles = 0; var ignored = 0
         sources.forEachIndexed { index, source ->
@@ -29,7 +30,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                             require(!unsafe) { "ZIP contém caminho inseguro: ${entry.name}" }
                             if (entry.isDirectory) continue
                             if (!entry.name.lowercase().endsWith(".csv")) { ignored++; continue }
-                            val temp = File.createTempFile("alcada_", ".csv", workDir)
+                            val temp = File.createTempFile("alcada_", ".csv", sessionDir)
                             FileOutputStream(temp).use { out ->
                                 val buffer = ByteArray(64 * 1024)
                                 while (true) { val n = zip.read(buffer); if (n < 0) break; expanded += n; require(expanded <= maxExpandedBytes) { "ZIP excede o limite seguro de expansão." }; out.write(buffer, 0, n) }
@@ -38,7 +39,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                         }
                     }
                 } else if (source.name.lowercase().endsWith(".csv")) {
-                    val temp = File.createTempFile("alcada_", ".csv", workDir)
+                    val temp = File.createTempFile("alcada_", ".csv", sessionDir)
                     source.open().use { input -> FileOutputStream(temp).use { out ->
                         val buffer = ByteArray(64 * 1024)
                         var copied = 0L
@@ -53,18 +54,15 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                     canonical += normalize(temp, source.name); temp.delete(); csvFiles++
                 } else ignored++
             }.onFailure { issues += ImportIssue(source.name, friendly(it)) }
-            workDir.listFiles { file -> file.name.startsWith("alcada_") && file.name.endsWith(".csv") }
-                ?.filter { it !in canonical }
-                ?.forEach { it.delete() }
         }
         require(canonical.isNotEmpty()) { issues.firstOrNull()?.message ?: "Nenhum CSV válido foi encontrado." }
-        val merge = merge(canonical, output); canonical.forEach(File::delete)
+        val merge = try { merge(canonical, output) } finally { canonical.forEach(File::delete); sessionDir.deleteRecursively() }
         onProgress(sources.size, sources.size, "Concluído")
         return ImportSummary(sources.size, csvFiles, merge.valid, merge.duplicates, ignored, merge.first, merge.last, issues)
     }
 
     private fun normalize(input: File, label: String): File {
-        val target = File.createTempFile("alcada_normalizado_", ".csv", workDir); var previous = Long.MIN_VALUE
+        val target = File.createTempFile("alcada_normalizado_", ".csv", input.parentFile ?: workDir); var previous = Long.MIN_VALUE
         var count = 0L
         target.bufferedWriter().use { writer -> input.inputStream().use { stream ->
             CsvCandleReader().chunks(stream).forEach { chunk -> chunk.forEach { c ->
