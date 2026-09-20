@@ -99,6 +99,14 @@ class StrategyScriptExportTest {
         assertTrue(script.contains("média simples de 14 True Ranges"))
     }
 
+    @Test fun malformedOperatorsAndNonFiniteThresholdsAreBlocked() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNull(scriptRule("wickBodyRatio:!=:2.0", language, "CALL"))
+            assertNull(scriptRule("wickBodyRatio:>=:NaN", language, "CALL"))
+            assertNull(scriptRule("wickBodyRatio:>=:Infinity", language, "CALL"))
+        }
+    }
+
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
