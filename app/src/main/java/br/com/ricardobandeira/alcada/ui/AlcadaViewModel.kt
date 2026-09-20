@@ -186,7 +186,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         researchJob = viewModelScope.launch {
             val runId = UUID.randomUUID().toString(); val started = System.currentTimeMillis()
             val dao = (getApplication<Application>() as AlcadaApplication).database.dao()
-            dao.saveRun(ResearchRunEntity(runId, started, null, "RUNNING", 0, 42, "budget=$budget"))
+            dao.saveRun(ResearchRunEntity(runId, started, null, "RUNNING", 0, 42, "budget=$budget;payout=${options.payout}"))
             _researchState.value = OperationState(true, 0f, "Preparando pesquisa local…")
             runCatching {
                 val candles = repository.loadCandles(datasetId)
@@ -195,13 +195,13 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 }.collect { progress ->
                     val ratio = progress.evaluated.toFloat() / budget
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
-                    dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
+                    dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget;payout=${options.payout}"))
                     if (progress.finished) repository.saveResearchLeaders(runId, datasetId, progress.leaders)
                 }
             }.onSuccess { _researchState.value = OperationState(progress = 1f, message = "Pesquisa concluída") }
                 .onFailure { error ->
                     val cancelled = error is kotlinx.coroutines.CancellationException
-                    withContext(NonCancellable) { dao.saveRun(ResearchRunEntity(runId, started, System.currentTimeMillis(), if (cancelled) "CANCELLED" else "FAILED", (_researchState.value.progress * 100).toInt(), 42, "budget=$budget")) }
+                    withContext(NonCancellable) { dao.saveRun(ResearchRunEntity(runId, started, System.currentTimeMillis(), if (cancelled) "CANCELLED" else "FAILED", (_researchState.value.progress * 100).toInt(), 42, "budget=$budget;payout=${options.payout}")) }
                     _researchState.value = OperationState(message = if (cancelled) "Pesquisa cancelada" else null, error = if (cancelled) null else friendlyError(error))
                 }
         }
