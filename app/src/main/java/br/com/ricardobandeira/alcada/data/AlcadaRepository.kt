@@ -91,13 +91,25 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
         value.robustness * .55 + value.metrics.expectancy.coerceIn(-1.0, 1.0) * .30 -
             value.metrics.maxDrawdown * .02 - if (value.overfitWarning) .15 else 0.0
 
-    private fun profile(value: EvaluatedStrategy): Profile = when {
-        value.status == ValidationStatus.VALIDATED && value.robustness >= .8 -> Profile.CONSERVATIVE
-        value.status == ValidationStatus.VALIDATED -> Profile.MODERATE
-        value.metrics.maxDrawdown < 10 -> Profile.AGGRESSIVE
-        else -> Profile.EXPERIMENTAL
+    private fun profile(value: EvaluatedStrategy): Profile {
+        val breakEven = value.metrics.breakEvenWinRate ?: .5
+        val edge = value.oosWinRate - breakEven
+        return when {
+            value.status == ValidationStatus.VALIDATED && value.robustness >= .82 &&
+                !value.overfitWarning && edge >= .04 -> Profile.CONSERVATIVE
+            value.status == ValidationStatus.VALIDATED && value.robustness >= .65 &&
+                edge > 0.0 -> Profile.MODERATE
+            value.metrics.expectancy > 0.0 && value.robustness >= .45 -> Profile.AGGRESSIVE
+            else -> Profile.EXPERIMENTAL
+        }
     }
 
-    private fun encodeStrategy(value: EvaluatedStrategy) = listOf(value.metrics.trades, value.metrics.winRate, value.oosWinRate, value.metrics.profitFactor,
-        value.metrics.expectancy, value.metrics.maxDrawdown, value.robustness, value.status.name, value.overfitWarning).joinToString("|")
+    private fun encodeStrategy(value: EvaluatedStrategy) = listOf(
+        value.metrics.trades, value.metrics.winRate, value.oosWinRate, value.metrics.profitFactor,
+        value.metrics.expectancy, value.metrics.maxDrawdown, value.robustness, value.status.name,
+        value.overfitWarning, value.strategy.direction.name, value.strategy.timeframeMinutes,
+        value.strategy.exit.bars ?: 0,
+        value.strategy.entries.joinToString("&") { rule -> rule.feature + ":" + rule.operator + ":" + rule.threshold },
+        value.metrics.breakEvenWinRate ?: Double.NaN
+    ).joinToString("|")
 }
