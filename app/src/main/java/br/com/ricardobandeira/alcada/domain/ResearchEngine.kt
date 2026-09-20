@@ -16,10 +16,11 @@ class ResearchEngine {
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
-        val workerCount = budget.threads.coerceAtLeast(1)
+        val workerCount = budget.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
         val batchSize = minOf(workerCount * 4, 64)
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
+        require(budget.memoryMb >= 64) { "A pesquisa precisa de pelo menos 64 MB de orçamento de memória." }
         var accepted = 0; var best: EvaluatedStrategy? = null
         val elite = mutableListOf<EvaluatedStrategy>()
         repeat(budget.maxCandidates) { n ->
