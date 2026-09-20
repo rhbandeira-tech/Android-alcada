@@ -94,6 +94,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     }
 
     suspend fun saveBacktest(datasetId: String, market: Market, result: BacktestResult): BacktestEntity {
+        requireNotNull(dao.dataset(datasetId)) { "Conjunto de dados não encontrado." }
         val m = result.metrics
         val metrics = listOf(m.trades, m.wins, m.winRate, m.netProfit, m.profitFactor, m.expectancy, m.maxDrawdown, m.breakEvenWinRate ?: Double.NaN).joinToString("|")
         val trades = result.trades.joinToString(";") { "${it.entryTime},${it.exitTime},${it.pnl},${it.won}" }
