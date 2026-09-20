@@ -33,4 +33,14 @@ class FeatureEngineTest {
     @Test fun `volatilidade com uma vela e neutra`() {
         assertEquals(0.0, FeatureEngine.volatility(listOf(Candle(0, 10.0, 11.0, 9.0, 10.0)), 5), 0.0)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `vela rejeita numero nao finito`() {
+        Candle(0, Double.NaN, 11.0, 9.0, 10.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `vela rejeita spread negativo`() {
+        Candle(0, 10.0, 11.0, 9.0, 10.0, spread = -0.1)
+    }
 }
