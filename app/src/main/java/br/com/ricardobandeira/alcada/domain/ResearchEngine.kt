@@ -29,17 +29,21 @@ class ResearchEngine {
                 .filter { FeatureEngine.candle(candles[it], candles[it - 1]).wickBodyRatio >= ratio }
                 .map { it to direction }.take(5_000).toList()
             val split = (candles.size * .7).toInt()
-            val ins = BacktestEngine.binary(candles, signals.filter { it.first + expiration < split }, expiration, .8)
-            val oos = BacktestEngine.binary(candles, signals.filter { it.first >= split }, expiration, .8)
-            if (ins.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
+            // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
+            val insSignals = signals.filter { it.first + expiration < split }
+            val oosSignals = signals.filter { it.first >= split }
+            val ins = BacktestEngine.binary(candles, insSignals, expiration, .8)
+            val oos = BacktestEngine.binary(candles, oosSignals, expiration, .8)
+            if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
                 accepted++
                 val gap = kotlin.math.abs(ins.winRate - oos.winRate)
-                val robustness = (1.0 - gap * 2).coerceIn(0.0, 1.0) * (oos.trades / 30.0).coerceAtMost(1.0)
+                val sampleFactor = (oos.trades.toDouble() / budget.minimumTrades.coerceAtLeast(1)).coerceAtMost(1.0)
+                val robustness = (1.0 - gap * 2).coerceIn(0.0, 1.0) * sampleFactor
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", 1, direction, listOf(EntryRule("wickBodyRatio", ">=", ratio)), ExitRule(bars = expiration), budget.seed)
                 val result = EvaluatedStrategy(strategy, ins, oos.winRate, robustness,
                     if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
-                    gap > .15 || oos.trades < budget.minimumTrades)
+                    gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0)
                 val score = { e: EvaluatedStrategy -> e.robustness * .5 + e.metrics.expectancy.coerceIn(-1.0, 1.0) * .3 - e.metrics.maxDrawdown * .02 }
                 if (best == null || score(result) > score(best!!)) best = result
             }
