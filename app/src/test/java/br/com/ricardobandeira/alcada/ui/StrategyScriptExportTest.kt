@@ -38,9 +38,11 @@ class StrategyScriptExportTest {
     }
 
     @Test fun pineSupportsImplementedAdvancedFeatures() {
-        listOf("sessionUtc", "atrRangeRatio", "candleSequence", "levelDistanceRatio", "accelerationRangeRatio").forEach {
+        listOf("atrRangeRatio", "candleSequence", "levelDistanceRatio", "accelerationRangeRatio").forEach {
             assertNotNull(it, scriptRule("$it:>=:1.0", "TradingView", "CALL"))
         }
+        assertNotNull(scriptRule("sessionUtc:==:1.0", "TradingView", "CALL"))
+        assertNull(scriptRule("sessionUtc:>=:1.0", "TradingView", "CALL"))
         assertNull(scriptRule("spreadRangeRatio:>=:0.1", "TradingView", "CALL"))
     }
 
