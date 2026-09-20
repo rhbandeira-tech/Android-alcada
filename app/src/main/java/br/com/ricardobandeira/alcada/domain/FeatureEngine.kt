@@ -63,7 +63,7 @@ object FeatureEngine {
     }
 
     fun candleColorSequence(candles: List<Candle>, endExclusive: Int = candles.size, maxLength: Int = 8): Int {
-        require(maxLength > 0 && endExclusive in 1..candles.size)
+        require(maxLength > 0 && endExclusive in 1..candles.size) { "Janela de sequência de velas inválida." }
         val last = candles[endExclusive - 1]
         val direction = last.close.compareTo(last.open)
         if (direction == 0) return 0
@@ -77,7 +77,7 @@ object FeatureEngine {
     }
 
     fun supportResistanceDistance(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Pair<Double, Double> {
-        require(period > 0 && endExclusive in 1..candles.size)
+        require(period > 0 && endExclusive in 1..candles.size) { "Janela de suporte e resistência inválida." }
         val start = maxOf(0, endExclusive - period)
         val window = candles.subList(start, endExclusive)
         val close = candles[endExclusive - 1].close
