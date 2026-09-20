@@ -503,21 +503,7 @@ private fun scriptRule(encoded: String, language: String, direction: String? = n
             else -> null
         }
     }
-    if (language != "TradingView") {
-        val supported = setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio","atrRangeRatio","candleSequence","levelDistanceRatio")
-        if (feature in supported) return feature + " " + op + " " + value
-        if (feature == "sessionUtc") {
-            val join = if (language == "MQL5") " && " else " and "
-            val hour = "utcHour"
-            return when (numericValue.toInt()) {
-                1 -> "(" + hour + " >= 0" + join + hour + " <= 6)"
-                2 -> "(" + hour + " >= 7" + join + hour + " <= 12)"
-                3 -> "(" + hour + " >= 13" + join + hour + " <= 20)"
-                else -> null
-            }
-        }
-        return null
-    }
+    if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio")) feature + " " + op + " " + value else null
     val expression = when (feature) {
         "wickBodyRatio" -> "(math.max(high-open, high-close)/math.max(math.abs(close-open),syminfo.mintick))"
         "bodyRangeRatio" -> "(math.abs(close-open)/math.max(high-low,syminfo.mintick))"
