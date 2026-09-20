@@ -494,6 +494,7 @@ internal fun scriptRule(encoded: String, language: String, direction: String? = 
     val feature = p.getOrNull(0) ?: return null
     val op = p.getOrNull(1) ?: return null
     val numericValue = p.getOrNull(2)?.toDoubleOrNull() ?: return null
+    if (!numericValue.isFinite() || op !in setOf(">=", "<=", ">", "<", "==")) return null
     val value = numericValue.toString()
     if (language == "TradingView" && feature == "sessionUtc") {
         if (op != "==" || numericValue !in listOf(1.0, 2.0, 3.0)) return null
