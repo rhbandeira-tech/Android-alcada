@@ -430,10 +430,41 @@ private fun StrategyCard(strategy: StrategyEntity, rank: Int? = null, champion: 
                 Text(rationale, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Desempenho histórico não garante resultados futuros. A validação fora da amostra reduz, mas não elimina, o risco de sobreajuste.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = { details = true }) { Text("Ver explicação completa") }
+                StrategyScriptActions(strategy, data)
             }
         }
     }
     if (details) AlertDialog(onDismissRequest = { details = false }, title = { Text("Como esta estratégia funciona") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(strategy.name, fontWeight = FontWeight.Bold); Text("Evidência", fontWeight = FontWeight.SemiBold); Text("Dentro da amostra ${pct(data.getOrNull(1))} • fora da amostra ${pct(data.getOrNull(2))} • robustez ${pct(data.getOrNull(6))}."); if (data.size > 20) Text("Monte Carlo: em 95% das simulações o resultado ficou acima de ${number(data.getOrNull(19)?.toDoubleOrNull() ?: Double.NaN)}; queda P95 ${number(data.getOrNull(20)?.toDoubleOrNull() ?: Double.NaN)}.") ; Text("Pontos de atenção", fontWeight = FontWeight.SemiBold); Text(if (data.getOrNull(8) == "true") "Há sinais de fragilidade ou sobreajuste. Exija mais dados e novas janelas." else "Sem alerta forte pelos critérios atuais; perdas e mudanças de regime continuam possíveis."); Text("Resultados históricos não garantem desempenho futuro.") } }, confirmButton = { TextButton(onClick = { details = false }) { Text("Fechar") } })
+}
+
+@Composable
+private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) {
+    var format by remember { mutableStateOf<String?>(null) }
+    val clipboard = LocalClipboardManager.current
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        listOf("Lua", "MQL5", "TradingView").forEach { language ->
+            AssistChip(onClick = { format = language }, label = { Text(language) }, leadingIcon = { Icon(Icons.Default.Code, null) })
+        }
+    }
+    format?.let { language ->
+        val script = strategyScript(strategy, data, language)
+        AlertDialog(onDismissRequest = { format = null }, title = { Text("Script " + language) }, text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Revise ativo, período, tamanho da posição e parâmetros da corretora antes de usar.", color = Pending, style = MaterialTheme.typography.bodySmall)
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) { Text(script, Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall) }
+            }
+        }, confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(script)); format = null }) { Text("Copiar script") } }, dismissButton = { TextButton(onClick = { format = null }) { Text("Fechar") } })
+    }
+}
+
+private fun strategyScript(strategy: StrategyEntity, data: List<String>, language: String): String {
+    val rules = data.getOrNull(12)?.split('&')?.filter { it.isNotBlank() }.orEmpty()
+    val comments = rules.joinToString("\n") { ruleDescription(it) }
+    return when (language) {
+        "MQL5" -> "// Alçada - " + strategy.name + "\n// " + strategy.symbol + "\n// " + comments.replace("\n", "\n// ") + "\nvoid OnTick(){\n  // Implemente as condições acima usando OHLC do período indicado.\n}"
+        "TradingView" -> "//@version=5\nstrategy(Alcada, overlay=true)\n// " + comments.replace("\n", "\n// ") + "\n// Converta as condições acima em expressões Pine antes de habilitar ordens."
+        else -> "-- Alçada - " + strategy.name + "\n-- " + strategy.symbol + "\n-- " + comments.replace("\n", "\n-- ") + "\nfunction sinal()\n  -- Converta as condições para a API Lua da plataforma.\n  return false\nend"
+    }
 }
 
 private fun ruleDescription(encoded: String): String {
