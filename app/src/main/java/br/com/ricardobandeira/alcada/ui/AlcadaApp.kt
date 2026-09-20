@@ -466,7 +466,7 @@ private fun strategyScript(strategy: StrategyEntity, data: List<String>, languag
     val expressions = converted.mapNotNull { it.second }
     val unsupported = converted.filter { it.second == null }.map { ruleDescription(it.first) }
     val condition = if (expressions.isEmpty() || unsupported.isNotEmpty()) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
-    val warning = if (unsupported.isEmpty()) "" else "REVISÃO OBRIGATÓRIA - filtros não convertidos: " + unsupported.joinToString(", ") + "\\n"
+    val warning = if (unsupported.isEmpty()) "" else "REVISÃO OBRIGATÓRIA - filtros não convertidos: " + unsupported.joinToString(", ") + "\n"
     val name = strategy.name.replace("\"", "")
     return when (language) {
         "TradingView" -> "// " + warning + "//@version=5\nstrategy(\"Alcada - " + name + "\", overlay=true)\nsignal = " + condition + "\nplotshape(signal, style=shape.triangleup, location=location.belowbar)\nif signal\n    strategy.entry(\"Alcada\", " + if (data.getOrNull(9) == "PUT") "strategy.short)" else "strategy.long)"
