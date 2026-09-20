@@ -66,4 +66,16 @@ class FeatureEngineTest {
         val d = Candle(3, 11.0, 13.5, 10.8, 13.0, 1.0, 0.0)
         assertEquals(1.0, FeatureEngine.candle(d, b, a).acceleration, 1e-9)
     }
+
+    @Test
+    fun `distancias de suporte e resistencia respeitam janela passada`() {
+        val candles = listOf(
+            Candle(1, 10.0, 12.0, 9.0, 11.0, 1.0, 0.0),
+            Candle(2, 11.0, 13.0, 10.0, 12.0, 1.0, 0.0),
+            Candle(3, 12.0, 14.0, 11.0, 13.0, 1.0, 0.0)
+        )
+        val (support, resistance) = FeatureEngine.supportResistanceDistance(candles, 3)
+        assertEquals(4.0, support, 1e-9)
+        assertEquals(1.0, resistance, 1e-9)
+    }
 }
