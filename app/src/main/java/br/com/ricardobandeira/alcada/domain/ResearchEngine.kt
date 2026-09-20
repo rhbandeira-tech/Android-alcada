@@ -46,14 +46,21 @@ class ResearchEngine {
                 accepted++
                 val gap = kotlin.math.abs(ins.winRate - oos.winRate)
                 val sampleFactor = (oos.trades.toDouble() / budget.minimumTrades.coerceAtLeast(1)).coerceAtMost(1.0)
-                val foldSize = candles.size / 3
-                val stableFolds = (0 until 3).count { fold ->
+                val foldSize = candles.size / 4
+                val forwardTests = (1..3).map { fold ->
                     val start = fold * foldSize
-                    val end = if (fold == 2) candles.size else (fold + 1) * foldSize
-                    val foldMetrics = BacktestEngine.binary(candles, signals.filter { it.first >= start && it.first + expiration < end }, expiration, .8)
-                    foldMetrics.trades >= maxOf(3, budget.minimumTrades / 3) && foldMetrics.expectancy > 0.0 && foldMetrics.profitFactor > 1.0
+                    val end = if (fold == 3) candles.size else (fold + 1) * foldSize
+                    BacktestEngine.binary(
+                        candles,
+                        signals.filter { it.first >= start && it.first + expiration < end },
+                        expiration,
+                        .8
+                    )
                 }
-                val stability = stableFolds / 3.0
+                val stableFolds = forwardTests.count {
+                    it.trades >= maxOf(3, budget.minimumTrades / 3) && it.expectancy > 0.0 && it.profitFactor > 1.0
+                }
+                val stability = stableFolds / forwardTests.size.toDouble()
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .55 + stability * .35 + sampleFactor * .10).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", 1, direction, listOf(
