@@ -36,4 +36,11 @@ data class BacktestMetrics(
 )
 data class EvaluatedStrategy(val strategy: StrategyDefinition, val metrics: BacktestMetrics, val oosWinRate: Double, val robustness: Double, val status: ValidationStatus, val overfitWarning: Boolean)
 
-data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2, val memoryMb: Int = 256, val seed: Long = 42, val minimumTrades: Int = 30)
+data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2, val memoryMb: Int = 256, val seed: Long = 42, val minimumTrades: Int = 30) {
+    init {
+        require(maxCandidates > 0) { "A pesquisa precisa avaliar pelo menos um candidato." }
+        require(threads > 0) { "A quantidade de processadores precisa ser positiva." }
+        require(memoryMb >= 64) { "Reserve pelo menos 64 MB para a pesquisa." }
+        require(minimumTrades > 0) { "O mínimo de operações precisa ser positivo." }
+    }
+}
