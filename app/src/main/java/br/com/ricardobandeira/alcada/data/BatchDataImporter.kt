@@ -24,7 +24,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                             val entry = zip.nextEntry ?: break
                             entryCount++; require(entryCount <= maxEntries) { "ZIP com arquivos demais." }
                             val unsafe = entry.name.startsWith("/") || entry.name.startsWith("\\") || entry.name.split('/', '\\').any { it == ".." }
-                            require(!unsafe) { "ZIP contém caminho inseguro: \${entry.name}" }
+                            require(!unsafe) { "ZIP contém caminho inseguro: ${entry.name}" }
                             if (entry.isDirectory) continue
                             if (!entry.name.lowercase().endsWith(".csv")) { ignored++; continue }
                             val temp = File.createTempFile("alcada_", ".csv", workDir)
@@ -52,7 +52,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
         val target = File.createTempFile("alcada_normalizado_", ".csv", workDir); var previous = Long.MIN_VALUE
         target.bufferedWriter().use { writer -> input.inputStream().use { stream ->
             CsvCandleReader().chunks(stream).forEach { chunk -> chunk.forEach { c ->
-                require(c.epochMillis >= previous) { "O arquivo \${label} não está em ordem cronológica." }; previous = c.epochMillis; writer.appendLine(row(c))
+                require(c.epochMillis >= previous) { "O arquivo ${label} não está em ordem cronológica." }; previous = c.epochMillis; writer.appendLine(row(c))
             } }
         } }
         return target
