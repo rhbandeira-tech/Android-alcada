@@ -44,4 +44,22 @@ class BacktestEngineTest {
         val result = BacktestEngine.forex(data, listOf(0 to Direction.LONG), exit, 0.0)
         assertEquals(1.0, result.netProfit, 1e-9)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `teste binario rejeita velas fora de ordem`() {
+        val candles = listOf(
+            Candle(2, 10.0, 11.0, 9.0, 10.0),
+            Candle(1, 10.0, 11.0, 9.0, 10.0)
+        )
+        BacktestEngine.binary(candles, emptyList(), 1, .85)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `forex rejeita custo negativo`() {
+        val candles = listOf(
+            Candle(1, 10.0, 11.0, 9.0, 10.0),
+            Candle(2, 10.0, 11.0, 9.0, 10.0)
+        )
+        BacktestEngine.forex(candles, emptyList(), ExitRule(bars = 1), -.01)
+    }
 }
