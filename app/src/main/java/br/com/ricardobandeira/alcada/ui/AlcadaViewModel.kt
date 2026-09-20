@@ -41,6 +41,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     val analysis = _analysis.asStateFlow()
     private var importJob: Job? = null
     private var researchJob: Job? = null
+    private var lastResearchOptions: ResearchOptions? = null
     private var backtestJob: Job? = null
     private fun friendlyError(error: Throwable): String {
         val message = error.message.orEmpty()
@@ -148,6 +149,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun runResearch(options: ResearchOptions = ResearchOptions()) {
+        lastResearchOptions = options
         if (options.candidates !in 100..100_000) return failResearch("Escolha entre 100 e 100.000 candidatos.")
         if (options.minimumTrades !in 5..10_000) return failResearch("O mínimo de operações deve ficar entre 5 e 10.000.")
         if (options.threads != null && options.threads !in 1..Runtime.getRuntime().availableProcessors().coerceAtLeast(1)) return failResearch("A quantidade de processadores selecionada não é válida neste aparelho.")
@@ -189,6 +191,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun cancelResearch() { researchJob?.cancel() }
+    fun repeatResearch() { lastResearchOptions?.let(::runResearch) ?: failResearch("Inicie uma pesquisa antes de tentar repeti-la.") }
     fun cancelBacktest() { backtestJob?.cancel() }
     private fun failResearch(message: String) { _researchState.value = OperationState(error = message) }
     private fun failBacktest(message: String) { _backtestState.value = OperationState(error = message) }
