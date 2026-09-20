@@ -84,7 +84,8 @@ class ResearchEngine {
             val oosSignals = signals.filter { it.first > split }
             currentCoroutineContext().ensureActive()
             val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, .8)
-            val oos = BacktestEngine.binary(researchCandles, oosSignals, expiration, .8)
+            val oosResult = BacktestEngine.binaryResult(researchCandles, oosSignals, expiration, .8)
+            val oos = oosResult.metrics
             if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
                 accepted++
                 val gap = kotlin.math.abs(ins.winRate - oos.winRate)
@@ -112,7 +113,10 @@ class ResearchEngine {
                 }
                 val stabilityPenalty = (1.0 / (1.0 + regimeDispersion)).coerceIn(0.0, 1.0)
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .45 + stability * .30 + stabilityPenalty * .15 + sampleFactor * .10).coerceIn(0.0, 1.0)
-                val adjustedRobustness = robustness
+                currentCoroutineContext().ensureActive()
+                val monteCarlo = MonteCarlo.analyze(oosResult.trades, simulations = 200, seed = budget.seed + n)
+                val tailPenalty = if (monteCarlo.p05NetProfit > 0.0) 1.0 else .75
+                val adjustedRobustness = (robustness * tailPenalty).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(java.util.Locale.US, ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", timeframeFactor, direction, listOf(
                         EntryRule("wickBodyRatio", ">=", ratio),
@@ -125,7 +129,7 @@ class ResearchEngine {
                     oosWinRate = oos.winRate,
                     robustness = adjustedRobustness,
                     status = if (adjustedRobustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
-                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5 || regimeDispersion > 2.0,
+                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5 || regimeDispersion > 2.0 || monteCarlo.p05NetProfit <= 0.0,
                     oosTrades = oos.trades,
                     oosExpectancy = oos.expectancy,
                     oosProfitFactor = oos.profitFactor,
