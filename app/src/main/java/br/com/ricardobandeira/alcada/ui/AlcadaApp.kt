@@ -461,13 +461,16 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
 
 private fun strategyScript(strategy: StrategyEntity, data: List<String>, language: String): String {
     val rules = data.getOrNull(12)?.split('&')?.filter { it.isNotBlank() }.orEmpty()
-    val expressions = rules.mapNotNull { scriptRule(it, language) }
-    val condition = if (expressions.isEmpty()) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
+    val converted = rules.map { it to scriptRule(it, language) }
+    val expressions = converted.mapNotNull { it.second }
+    val unsupported = converted.filter { it.second == null }.map { ruleDescription(it.first) }
+    val condition = if (expressions.isEmpty() || unsupported.isNotEmpty()) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
+    val warning = if (unsupported.isEmpty()) "" else "REVISÃO OBRIGATÓRIA - filtros não convertidos: " + unsupported.joinToString(", ") + "\\n"
     val name = strategy.name.replace("\"", "")
     return when (language) {
-        "TradingView" -> "//@version=5\nstrategy(\"Alcada - " + name + "\", overlay=true)\nsignal = " + condition + "\nplotshape(signal, style=shape.triangleup, location=location.belowbar)\nif signal\n    strategy.entry(\"Alcada\", " + if (data.getOrNull(9) == "PUT") "strategy.short)" else "strategy.long)"
-        "MQL5" -> "// Alçada - " + name + "\n#include <Trade/Trade.mqh>\nCTrade trade;\nvoid OnTick(){\n double o=iOpen(_Symbol,_Period,1),h=iHigh(_Symbol,_Period,1),l=iLow(_Symbol,_Period,1),c=iClose(_Symbol,_Period,1),pc=iClose(_Symbol,_Period,2);\n double range=MathMax(h-l,_Point),body=MathMax(MathAbs(c-o),_Point);\n double wickBodyRatio=MathMax(h-o,h-c)/body,bodyRangeRatio=MathAbs(c-o)/range,closeLocation=(c-l)/range;\n double momentumRangeRatio=MathAbs(c-pc)/range,gapRangeRatio=MathAbs(o-pc)/range,accelerationRangeRatio=0;\n if(" + condition + ") trade." + if(data.getOrNull(9)=="PUT") "Sell(0.01,_Symbol);\n}" else "Buy(0.01,_Symbol);\n}"
-        else -> "-- Alçada - " + name + "\nfunction sinal(o,h,l,c,pc)\n local range=math.max(h-l,0.0000001)\n local body=math.max(math.abs(c-o),0.0000001)\n local wickBodyRatio=math.max(h-o,h-c)/body\n local bodyRangeRatio=math.abs(c-o)/range\n local closeLocation=(c-l)/range\n local momentumRangeRatio=math.abs(c-pc)/range\n local gapRangeRatio=math.abs(o-pc)/range\n local accelerationRangeRatio=0\n return (" + condition + ")\nend"
+        "TradingView" -> "// " + warning + "//@version=5\nstrategy(\"Alcada - " + name + "\", overlay=true)\nsignal = " + condition + "\nplotshape(signal, style=shape.triangleup, location=location.belowbar)\nif signal\n    strategy.entry(\"Alcada\", " + if (data.getOrNull(9) == "PUT") "strategy.short)" else "strategy.long)"
+        "MQL5" -> "// " + warning + "// Alçada - " + name + "\n#include <Trade/Trade.mqh>\nCTrade trade;\nvoid OnTick(){\n double o=iOpen(_Symbol,_Period,1),h=iHigh(_Symbol,_Period,1),l=iLow(_Symbol,_Period,1),c=iClose(_Symbol,_Period,1),pc=iClose(_Symbol,_Period,2);\n double range=MathMax(h-l,_Point),body=MathMax(MathAbs(c-o),_Point);\n double wickBodyRatio=MathMax(h-o,h-c)/body,bodyRangeRatio=MathAbs(c-o)/range,closeLocation=(c-l)/range;\n double momentumRangeRatio=MathAbs(c-pc)/range,gapRangeRatio=MathAbs(o-pc)/range,accelerationRangeRatio=0;\n if(" + condition + ") trade." + if(data.getOrNull(9)=="PUT") "Sell(0.01,_Symbol);\n}" else "Buy(0.01,_Symbol);\n}"
+        else -> "-- " + warning + "-- Alçada - " + name + "\nfunction sinal(o,h,l,c,pc)\n local range=math.max(h-l,0.0000001)\n local body=math.max(math.abs(c-o),0.0000001)\n local wickBodyRatio=math.max(h-o,h-c)/body\n local bodyRangeRatio=math.abs(c-o)/range\n local closeLocation=(c-l)/range\n local momentumRangeRatio=math.abs(c-pc)/range\n local gapRangeRatio=math.abs(o-pc)/range\n local accelerationRangeRatio=0\n return (" + condition + ")\nend"
     }
 }
 
