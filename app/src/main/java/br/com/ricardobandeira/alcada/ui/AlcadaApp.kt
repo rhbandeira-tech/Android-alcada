@@ -297,14 +297,15 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
 
 @Composable
 private fun HeatmapCard(values: List<Bucket>) {
+    var selected by remember { mutableStateOf<Bucket?>(null) }
     ChartCard("Mapa de desempenho: dia × hora") {
         if (values.isEmpty()) Text("Amostra insuficiente", color = Pending) else {
-            Text("Cada célula mostra uma janela de dia e hora. Deslize para ver todas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Cada célula mostra uma janela de dia e hora. Deslize e toque numa célula para destacar seu valor.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 items(values) { bucket ->
-                    Surface(Modifier.width(78.dp), shape = RoundedCornerShape(8.dp), color = if (bucket.value >= 0) Positive.copy(alpha=.22f) else Negative.copy(alpha=.22f)) {
+                    Surface(onClick = { selected = bucket }, modifier = Modifier.width(88.dp), shape = RoundedCornerShape(8.dp), color = if (bucket.value >= 0) Positive.copy(alpha=.22f) else Negative.copy(alpha=.22f), border = if (selected == bucket) BorderStroke(2.dp, Analytic) else null) {
                         Column(Modifier.padding(horizontal = 8.dp, vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(bucket.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                            Text(bucket.label, style = MaterialTheme.typography.labelSmall, maxLines = 2)
                             Text(number(bucket.value), style = MaterialTheme.typography.labelSmall, color = if (bucket.value >= 0) Positive else Negative, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -314,6 +315,7 @@ private fun HeatmapCard(values: List<Bucket>) {
             val worst = values.minByOrNull { it.value }
             Text("Faixa observada: " + number(values.minOf { it.value }) + " até " + number(values.maxOf { it.value }) + " • " + values.size + " grupos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Melhor janela: " + (best?.label ?: "—") + " " + number(best?.value ?: Double.NaN) + " • Pior: " + (worst?.label ?: "—") + " " + number(worst?.value ?: Double.NaN), style = MaterialTheme.typography.bodySmall)
+            selected?.let { bucket -> Text("Selecionado: " + bucket.label + " • resultado " + number(bucket.value), color = if (bucket.value >= 0) Positive else Negative, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall) }
         }
     }
 }
