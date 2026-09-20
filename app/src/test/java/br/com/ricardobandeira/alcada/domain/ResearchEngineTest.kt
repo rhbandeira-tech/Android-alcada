@@ -28,4 +28,21 @@ class ResearchEngineTest {
     fun `orcamento rejeita memoria insegura`() {
         ResearchBudget(memoryMb = 32)
     }
+
+    @Test fun `pesquisa paralela preserva reproducibilidade`() = runTest {
+        val candles = (0 until 120).map { index ->
+            val base = 100.0 + index * .01
+            Candle(index * 60_000L, base, base + 1.2, base - 1.0, base + if (index % 2 == 0) .1 else -.1)
+        }
+        val one = ResearchEngine().discover(candles, ResearchBudget(maxCandidates = 30, threads = 1, seed = 9, minimumTrades = 5)).toList()
+        val many = ResearchEngine().discover(candles, ResearchBudget(maxCandidates = 30, threads = 4, seed = 9, minimumTrades = 5)).toList()
+        assertEquals(one.last().best?.strategy?.id, many.last().best?.strategy?.id)
+        assertEquals(one.last().accepted, many.last().accepted)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `pesquisa rejeita payout abaixo de um por cento`() = runTest {
+        val candles = (0 until 20).map { Candle(it.toLong(), 1.0, 1.1, .9, 1.0) }
+        ResearchEngine().discover(candles, ResearchBudget(maxCandidates = 1), .009).toList()
+    }
 }
