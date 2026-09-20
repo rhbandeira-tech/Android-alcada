@@ -62,4 +62,14 @@ class BacktestEngineTest {
         )
         BacktestEngine.forex(candles, emptyList(), ExitRule(bars = 1), -.01)
     }
+
+    @Test fun `payout de 85 por cento calcula ponto de equilibrio correto`() {
+        val candles = listOf(
+            Candle(1, 1.0, 1.1, .9, 1.0),
+            Candle(2, 1.0, 1.2, .9, 1.1)
+        )
+        val result = BacktestEngine.binaryResult(candles, listOf(0 to Direction.CALL), 1, .85)
+        assertEquals(1.0 / 1.85, result.metrics.breakEvenWinRate ?: 0.0, 1e-12)
+        assertEquals(.85, result.metrics.netProfit, 1e-12)
+    }
 }
