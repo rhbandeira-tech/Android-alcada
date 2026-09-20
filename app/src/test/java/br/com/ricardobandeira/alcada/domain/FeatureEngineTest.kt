@@ -119,4 +119,14 @@ class FeatureEngineTest {
         assertEquals(5.0, result.volume, 1e-9)
         assertEquals(0.3, result.spread, 1e-9)
     }
+
+    @Test fun `spread normalizado evita divisao por zero`() {
+        val candle = Candle(1, 10.0, 10.0, 10.0, 10.0, 1.0, 0.2)
+        assertEquals(0.0, FeatureEngine.spreadRangeRatio(candle), 0.0)
+    }
+
+    @Test fun `spread normalizado usa amplitude da vela`() {
+        val candle = Candle(1, 10.0, 12.0, 8.0, 11.0, 1.0, 0.2)
+        assertEquals(0.05, FeatureEngine.spreadRangeRatio(candle), 1e-9)
+    }
 }
