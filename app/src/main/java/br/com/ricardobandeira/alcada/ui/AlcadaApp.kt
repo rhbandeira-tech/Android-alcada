@@ -189,6 +189,19 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                                 Text("Robustez ${pct(d.getOrNull(6))} • OOS ${pct(d.getOrNull(2))}", style = MaterialTheme.typography.bodySmall)
                                 Text("Fator ${number(d.getOrNull(3)?.toDoubleOrNull() ?: Double.NaN)} • esperado ${number(d.getOrNull(4)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
                                 Text("Queda máxima ${number(d.getOrNull(5)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
+                                val robustness = d.getOrNull(6)?.toDoubleOrNull()
+                                val oos = d.getOrNull(2)?.toDoubleOrNull()
+                                val factor = d.getOrNull(3)?.toDoubleOrNull()
+                                val expected = d.getOrNull(4)?.toDoubleOrNull()
+                                val drawdown = d.getOrNull(5)?.toDoubleOrNull()
+                                val strengths = buildList {
+                                    if (robustness != null && robustness >= .70) add("robustez")
+                                    if (oos != null && oos >= .55) add("OOS")
+                                    if (factor != null && factor > 1.20) add("fator de lucro")
+                                    if (expected != null && expected > 0.0) add("resultado esperado")
+                                }
+                                Text("Pontos fortes: " + (strengths.take(2).joinToString(" + ").ifBlank { "sem destaque isolado" }), style = MaterialTheme.typography.labelSmall, color = Positive)
+                                if (drawdown != null && drawdown < 0.0) Text("Trade-off: queda histórica ${number(drawdown)}; compare retorno e estabilidade antes de escolher.", style = MaterialTheme.typography.labelSmall, color = Pending)
                             }
                         }
                     }
