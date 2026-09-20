@@ -133,6 +133,22 @@ class StrategyScriptExportTest {
         assertFailsWith<IllegalArgumentException> { strategyScript(strategy, data, "Unknown") }
     }
 
+    @Test fun strategyNameCannotInjectLinesIntoGeneratedScript() {
+        val strategy = StrategyEntity(
+            id="test-name", researchRunId="run", name="Safe\\nInjected\\t\\\"Name",
+            market="BINARY_OPTIONS", symbol="EURUSD", profile="EXPERIMENTAL",
+            definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            val script = strategyScript(strategy, data, language)
+            assertFalse(script.contains("Safe\\nInjected"))
+            assertFalse(script.contains("\\\"Name"))
+            assertTrue(script.contains("Safe Injected Name"))
+        }
+    }
+
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
@@ -145,4 +161,5 @@ class StrategyScriptExportTest {
         assertTrue(lua.contains("return (false)"))
     }
 }
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
