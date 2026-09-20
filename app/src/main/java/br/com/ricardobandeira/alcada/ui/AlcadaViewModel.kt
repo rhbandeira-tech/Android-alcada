@@ -193,6 +193,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             _researchState.value = OperationState(true, 0f, "Preparando pesquisa local…")
             runCatching {
                 val candles = repository.loadCandles(datasetId)
+                require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas válidas." }
                 ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = options.threads ?: if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = options.memoryMb ?: if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50))), payout = options.payout) {
                     while (researchPaused) { kotlinx.coroutines.delay(150); kotlinx.coroutines.currentCoroutineContext().job.ensureActive() }
                 }.collect { progress ->
