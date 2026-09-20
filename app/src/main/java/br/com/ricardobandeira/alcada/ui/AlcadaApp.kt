@@ -309,7 +309,7 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 "Robustez ${pct(data.getOrNull(6))} • ${validationLabel(data.getOrNull(7))}",
                 color = if (data.getOrNull(8) == "true") Negative else Positive,
             )
-            if (data.getOrNull(8) == "true") Text("Alerta: sinais de fragilidade ou sobreajuste.", color = Negative)
+            if (data.getOrNull(8) == "true") Text("Alerta: sinais de fragilidade, instabilidade temporal ou sobreajuste.", color = Negative)
             if (data.size > 18) {
                 val oosTrades = data.getOrNull(14) ?: "—"
                 val oosExpectancy = data.getOrNull(15)?.toDoubleOrNull()?.let(::number) ?: "—"
