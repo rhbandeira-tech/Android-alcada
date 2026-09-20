@@ -32,6 +32,9 @@ jobs:
         run: gradle testDebugUnitTest --stacktrace
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
+      - name: Verify APK exists and is non-empty
+        shell: bash
+        run: test -s app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: alcada-debug-apk
