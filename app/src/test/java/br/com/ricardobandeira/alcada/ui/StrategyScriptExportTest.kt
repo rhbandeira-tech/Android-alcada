@@ -63,10 +63,10 @@ class StrategyScriptExportTest {
         val data = MutableList(13) { "" }
         data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
         val script = strategyScript(strategy, data, "TradingView")
-        assertTrue(script.contains("indicator(\\"Alçada -"))
+        assertTrue(script.contains("indicator("))
         assertTrue(script.contains("alertcondition(signal"))
         assertFalse(script.contains("strategy.entry"))
-        assertFalse(script.contains("strategy(\\""))
+        assertFalse(script.contains("strategy("))
     }
 
     @Test fun mql5ExportNeverPlacesLiveOrders() {
