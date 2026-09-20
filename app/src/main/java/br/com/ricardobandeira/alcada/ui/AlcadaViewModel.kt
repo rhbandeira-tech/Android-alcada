@@ -17,7 +17,7 @@ import java.util.UUID
 
 data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null)
 data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
-data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>)
+data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>, val monteCarlo: MonteCarloSummary? = null)
 
 class AlcadaViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AlcadaRepository(application, (application as AlcadaApplication).database.dao())
@@ -95,7 +95,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 val selectedMetadata = datasets.value.firstOrNull { it.id == id }
                 val expiry = if (options.market == Market.BINARY_OPTIONS) (1..5).map { value -> Bucket("${selectedMetadata?.timeframeMinutes ?: 1}m×$value", evaluate(signals, value).metrics.netProfit, signals.size) } else emptyList()
                 val name = selectedMetadata?.symbol ?: "LOCAL"
-                _analysis.value = QuantAnalysis(ChartAnalytics.wickBuckets(ChartAnalytics.wickOutcomes(candles, validationHorizon)), listOf(Bucket("IS", ins, signals.count { it.first + validationHorizon < split }), Bucket("OOS", oos, signals.count { it.first >= split })), expiry, listOf(Bucket(name, result.metrics.netProfit, result.metrics.trades)), ChartAnalytics.dayHourHeatmap(result.trades))
+                _analysis.value = QuantAnalysis(ChartAnalytics.wickBuckets(ChartAnalytics.wickOutcomes(candles, validationHorizon)), listOf(Bucket("IS", ins, signals.count { it.first + validationHorizon < split }), Bucket("OOS", oos, signals.count { it.first >= split })), expiry, listOf(Bucket(name, result.metrics.netProfit, result.metrics.trades)), ChartAnalytics.dayHourHeatmap(result.trades), MonteCarlo.analyze(result.trades, simulations = 500, seed = 42))
                 _backtestState.value = OperationState(true, .85f, "Persistindo resultado…")
                 repository.saveBacktest(id, options.market, result); result
             }.onSuccess { _result.value = it; _backtestState.value = OperationState(message = "Teste histórico concluído") }
