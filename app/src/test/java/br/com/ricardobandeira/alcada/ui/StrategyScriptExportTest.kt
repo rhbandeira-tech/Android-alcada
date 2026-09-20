@@ -145,7 +145,12 @@ class StrategyScriptExportTest {
         )
         val data = MutableList(13) { "" }
         data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
-        try {\n            strategyScript(strategy, data, "Unknown")\n            fail("Formato desconhecido deveria ser rejeitado")\n        } catch (_: IllegalArgumentException) {\n            // esperado\n        }
+        try {
+            strategyScript(strategy, data, "Unknown")
+            fail("Formato desconhecido deveria ser rejeitado")
+        } catch (_: IllegalArgumentException) {
+            // esperado
+        }
     }
 
     @Test fun strategyNameCannotInjectLinesIntoGeneratedScript() {
