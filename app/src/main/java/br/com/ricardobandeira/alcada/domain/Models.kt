@@ -77,7 +77,15 @@ data class BacktestMetrics(
         require(breakEvenWinRate == null || (breakEvenWinRate.isFinite() && breakEvenWinRate in 0.0..1.0)) { "A taxa de equilíbrio é inválida." }
     }
 }
-data class EvaluatedStrategy(val strategy: StrategyDefinition, val metrics: BacktestMetrics, val oosWinRate: Double, val robustness: Double, val status: ValidationStatus, val overfitWarning: Boolean, val oosTrades: Int = 0, val oosExpectancy: Double = 0.0, val oosProfitFactor: Double = 0.0, val stableForwardFolds: Int = 0, val forwardFolds: Int = 0, val monteCarloP05: Double = 0.0, val monteCarloP95Drawdown: Double = 0.0)
+data class EvaluatedStrategy(val strategy: StrategyDefinition, val metrics: BacktestMetrics, val oosWinRate: Double, val robustness: Double, val status: ValidationStatus, val overfitWarning: Boolean, val oosTrades: Int = 0, val oosExpectancy: Double = 0.0, val oosProfitFactor: Double = 0.0, val stableForwardFolds: Int = 0, val forwardFolds: Int = 0, val monteCarloP05: Double = 0.0, val monteCarloP95Drawdown: Double = 0.0) {
+    init {
+        require(oosWinRate.isFinite() && oosWinRate in 0.0..1.0) { "A taxa fora da amostra é inválida." }
+        require(robustness.isFinite() && robustness in 0.0..1.0) { "A robustez precisa ficar entre 0% e 100%." }
+        require(oosTrades >= 0 && oosExpectancy.isFinite() && oosProfitFactor >= 0.0 && !oosProfitFactor.isNaN()) { "Métricas fora da amostra inválidas." }
+        require(forwardFolds >= 0 && stableForwardFolds in 0..forwardFolds) { "Validação temporal inconsistente." }
+        require(monteCarloP05.isFinite() && monteCarloP95Drawdown.isFinite() && monteCarloP95Drawdown >= 0.0) { "Métricas de Monte Carlo inválidas." }
+    }
+}
 
 data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2, val memoryMb: Int = 256, val seed: Long = 42, val minimumTrades: Int = 30) {
     init {
