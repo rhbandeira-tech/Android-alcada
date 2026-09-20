@@ -123,4 +123,15 @@ class BacktestEngineTest {
         val result = BacktestEngine.binary(candles, listOf(0 to Direction.CALL, 0 to Direction.CALL), 1, .85)
         assertEquals(1, result.trades)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `metricas rejeitam mais vitorias que operacoes`() {
+        BacktestMetrics(1, 2, 1.0, 1.0, 1.0, 1.0, 0.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `resultado rejeita series com tamanho inconsistente`() {
+        val metrics = BacktestMetrics(1, 1, 1.0, 1.0, Double.POSITIVE_INFINITY, 1.0, 0.0)
+        BacktestResult(metrics, listOf(Trade(1, 2, 1.0, true)), emptyList(), listOf(0.0), listOf(1.0))
+    }
 }
