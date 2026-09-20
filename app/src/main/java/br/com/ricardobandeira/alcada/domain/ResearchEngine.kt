@@ -82,6 +82,8 @@ class ResearchEngine {
             val sequenceGate = if (n % 9 == 0) 2 + random.nextInt(3) else null
             val supportResistanceGate = if (n % 10 == 0) .15 + random.nextDouble() * .35 else null
             val accelerationGate = if (n % 8 == 0) random.nextDouble() * .75 else null
+            val momentumGate = if (n % 12 == 0) random.nextDouble() * .80 else null
+            val gapGate = if (n % 13 == 0) random.nextDouble() * .50 else null
             val rawSignals = SignalEngine.filteredWickSignals(
                 candles = researchCandles,
                 direction = direction,
@@ -104,7 +106,13 @@ class ResearchEngine {
             val accelerationFiltered = accelerationGate?.let { minimum -> levelFiltered.filter { (index, _) ->
                 if (index < 2) false else kotlin.math.abs(FeatureEngine.candle(researchCandles[index], researchCandles[index - 1], researchCandles[index - 2]).acceleration) >= researchCandles[index].range * minimum
             } } ?: levelFiltered
-            val signals = if (sessionGate == 0) accelerationFiltered else accelerationFiltered.filter { (index, _) ->
+            val momentumFiltered = momentumGate?.let { minimum -> accelerationFiltered.filter { (index, _) ->
+                if (index < 1) false else kotlin.math.abs(FeatureEngine.candle(researchCandles[index], researchCandles[index - 1]).momentum) >= researchCandles[index].range * minimum
+            } } ?: accelerationFiltered
+            val gapFiltered = gapGate?.let { minimum -> momentumFiltered.filter { (index, _) ->
+                if (index < 1) false else kotlin.math.abs(FeatureEngine.candle(researchCandles[index], researchCandles[index - 1]).gap) >= researchCandles[index].range * minimum
+            } } ?: momentumFiltered
+            val signals = if (sessionGate == 0) gapFiltered else gapFiltered.filter { (index, _) ->
                 val hour = FeatureEngine.sessionHour(researchCandles[index].epochMillis)
                 when (sessionGate) { 1 -> hour in 0..6; 2 -> hour in 7..12; 3 -> hour in 13..20; else -> true }
             }
@@ -157,7 +165,7 @@ class ResearchEngine {
                         EntryRule("wickBodyRatio", ">=", ratio),
                         EntryRule("bodyRangeRatio", "<=", bodyLimit),
                         EntryRule("closeLocation", if (direction == Direction.CALL) ">=" else "<=", if (direction == Direction.CALL) closeLocation else 1.0 - closeLocation)
-                    ) + listOfNotNull(maxSpreadRatio?.let { EntryRule("spreadRangeRatio", "<=", it) }) + listOfNotNull(if (sessionGate in 1..3) EntryRule("sessionUtc", "==", sessionGate.toDouble()) else null) + listOfNotNull(minAtrRatio?.let { EntryRule("atrRangeRatio", ">=", it) }) + listOfNotNull(sequenceGate?.let { EntryRule("candleSequence", ">=", it.toDouble()) }) + listOfNotNull(supportResistanceGate?.let { EntryRule("levelDistanceRatio", "<=", it) }) + listOfNotNull(accelerationGate?.let { EntryRule("accelerationRangeRatio", ">=", it) }), ExitRule(bars = expiration), budget.seed)
+                    ) + listOfNotNull(maxSpreadRatio?.let { EntryRule("spreadRangeRatio", "<=", it) }) + listOfNotNull(if (sessionGate in 1..3) EntryRule("sessionUtc", "==", sessionGate.toDouble()) else null) + listOfNotNull(minAtrRatio?.let { EntryRule("atrRangeRatio", ">=", it) }) + listOfNotNull(sequenceGate?.let { EntryRule("candleSequence", ">=", it.toDouble()) }) + listOfNotNull(supportResistanceGate?.let { EntryRule("levelDistanceRatio", "<=", it) }) + listOfNotNull(accelerationGate?.let { EntryRule("accelerationRangeRatio", ">=", it) }) + listOfNotNull(momentumGate?.let { EntryRule("momentumRangeRatio", ">=", it) }) + listOfNotNull(gapGate?.let { EntryRule("gapRangeRatio", ">=", it) }), ExitRule(bars = expiration), budget.seed)
                 val result = EvaluatedStrategy(
                     strategy = strategy,
                     metrics = ins,
