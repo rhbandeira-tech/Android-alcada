@@ -15,6 +15,11 @@ data class MonteCarloSummary(
 )
 
 object MonteCarlo {
+    internal fun nearestRank(values: DoubleArray, p: Double): Double {
+        require(values.isNotEmpty() && p in 0.0..1.0)
+        val sorted = values.sortedArray()
+        return sorted[(ceil(sorted.size * p).toInt() - 1).coerceIn(sorted.indices)]
+    }
     /**
      * Moving-block bootstrap. Sampling short contiguous runs preserves part of the
      * win/loss clustering that an independent trade bootstrap destroys.
@@ -49,8 +54,7 @@ object MonteCarlo {
         }
         profits.sort()
         drawdowns.sort()
-        fun percentile(values: DoubleArray, p: Double) =
-            values[(ceil(values.size * p).toInt() - 1).coerceIn(values.indices)]
+        fun percentile(values: DoubleArray, p: Double) = nearestRank(values, p)
         return MonteCarloSummary(
             simulations,
             percentile(profits, .50),
