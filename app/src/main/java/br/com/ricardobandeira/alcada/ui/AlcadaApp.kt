@@ -209,7 +209,7 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
             BarChart("Período gráfico × expiração", it.timeframeExpiration)
             it.monteCarlo?.let { mc ->
                 ChartCard("Simulação Monte Carlo") {
-                    Text("500 reamostragens das operações", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${mc.simulations} simulações • blocos de ${mc.blockSize} operações para preservar sequências", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Resultado mediano ${number(mc.medianNetProfit)} • pior faixa de 5% ${number(mc.p05NetProfit)}")
                     Text("Queda máxima no percentil 95 ${number(mc.p95MaxDrawdown)} • cenários positivos ${pct(mc.profitableShare)}")
                 }
