@@ -77,7 +77,8 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
             }
         }
         require(candles.size >= 2) { "O arquivo precisa conter pelo menos duas velas válidas." }
-        require(dataset.rowCount <= maxRows || candles.size == maxRows) { "A leitura do conjunto de dados foi interrompida antes do limite esperado." }
+        if (dataset.rowCount <= maxRows) require(candles.size.toLong() == dataset.rowCount) { "A leitura do conjunto de dados foi interrompida antes do esperado." }
+        else require(candles.size == maxRows) { "A leitura do conjunto de dados foi interrompida antes do limite esperado." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "Os dados precisam estar em ordem cronológica." }
         dao.touchDataset(id, System.currentTimeMillis())
         candles
