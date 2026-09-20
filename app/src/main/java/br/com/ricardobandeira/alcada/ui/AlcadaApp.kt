@@ -500,7 +500,6 @@ private fun scriptRule(encoded: String, language: String, direction: String? = n
         "atrRangeRatio" -> "(ta.atr(14)/math.max(high-low,syminfo.mintick))"
         "candleSequence" -> "(close>open ? (close[1]>open[1] ? (close[2]>open[2] ? (close[3]>open[3] ? 4.0 : 3.0) : 2.0) : 1.0) : (close<open ? (close[1]<open[1] ? (close[2]<open[2] ? (close[3]<open[3] ? -4.0 : -3.0) : -2.0) : -1.0) : 0.0))"
         "levelDistanceRatio" -> if (direction == "PUT") "(math.abs(close-ta.lowest(low,20))/math.max(high-low,syminfo.mintick))" else "(math.abs(ta.highest(high,20)-close)/math.max(high-low,syminfo.mintick))"
-        "sessionUtc" -> return null
         else -> return null
     }
     return expression + " " + op + " " + value
