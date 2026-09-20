@@ -2,7 +2,6 @@ package br.com.ricardobandeira.alcada.ui
 
 import br.com.ricardobandeira.alcada.data.StrategyEntity
 import org.junit.Assert.*
-import kotlin.test.assertFailsWith
 import org.junit.Test
 
 class StrategyScriptExportTest {
@@ -146,7 +145,7 @@ class StrategyScriptExportTest {
         )
         val data = MutableList(13) { "" }
         data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
-        assertFailsWith<IllegalArgumentException> { strategyScript(strategy, data, "Unknown") }
+        try {\n            strategyScript(strategy, data, "Unknown")\n            fail("Formato desconhecido deveria ser rejeitado")\n        } catch (_: IllegalArgumentException) {\n            // esperado\n        }
     }
 
     @Test fun strategyNameCannotInjectLinesIntoGeneratedScript() {
