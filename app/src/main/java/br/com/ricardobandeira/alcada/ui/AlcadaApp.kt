@@ -361,6 +361,26 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
         BarChart("Desempenho por horário (UTC)", ChartAnalytics.performanceByHour(result.trades))
         BarChart("Desempenho por dia", ChartAnalytics.performanceByDay(result.trades))
         analysis?.let {
+            val oosValues = it.isOos.map { point -> point.second }
+            val inSample = oosValues.getOrNull(0)
+            val outSample = oosValues.getOrNull(1)
+            val retention = if (inSample != null && outSample != null && kotlin.math.abs(inSample) > 1e-12) outSample / kotlin.math.abs(inSample) else null
+            val validationMc = it.monteCarlo
+            Card(colors = CardDefaults.cardColors(containerColor = Analytic.copy(alpha = .08f))) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Painel de validação • 10 verificações", fontWeight = FontWeight.Bold)
+                    Text("1 • OOS: " + if (inSample != null && outSample != null && inSample > 0 && outSample > 0) "permaneceu positivo fora da amostra." else "ainda não há confirmação positiva conjunta.", style = MaterialTheme.typography.bodySmall)
+                    Text("2 • Retenção OOS: " + (retention?.let { value -> pct(value) } ?: "indisponível") + ".", style = MaterialTheme.typography.bodySmall)
+                    Text("3 • Monte Carlo: " + (validationMc?.let { value -> "${pct(value.profitableShare)} dos cenários positivos." } ?: "indisponível."), style = MaterialTheme.typography.bodySmall)
+                    Text("4 • Cauda de risco: " + (validationMc?.let { value -> "pior faixa de 5% ${number(value.p05NetProfit)}." } ?: "sem estimativa."), style = MaterialTheme.typography.bodySmall)
+                    Text("5 • Drawdown simulado: " + (validationMc?.let { value -> "percentil 95 ${number(value.p95MaxDrawdown)}." } ?: "sem estimativa."), style = MaterialTheme.typography.bodySmall)
+                    Text("6 • Sequência: " + (validationMc?.let { value -> if (value.profitableShare >= .70) "maioria das reordenações preservou resultado positivo." else "há sensibilidade à ordem das operações." } ?: "não avaliada."), style = MaterialTheme.typography.bodySmall)
+                    Text("7 • Consistência: " + if (outSample != null && outSample > 0 && (validationMc?.profitableShare ?: 0.0) >= .70) "OOS e Monte Carlo apontam na mesma direção." else "as validações ainda não convergem.", style = MaterialTheme.typography.bodySmall)
+                    Text("8 • Estabilidade: confronte este painel com mapa, períodos e ativos.", style = MaterialTheme.typography.bodySmall)
+                    Text("9 • Risco: resultado histórico positivo não elimina degradação futura.", style = MaterialTheme.typography.labelSmall, color = Pending)
+                    Text("10 • Evidência: procure repetição em períodos, ativos e amostras independentes.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             HeatmapCard(it.heatmap)
             BarChart("Dentro da amostra × fora da amostra", it.isOos)
             BarChart("Período gráfico × expiração", it.timeframeExpiration)
