@@ -24,10 +24,10 @@ class CsvCandleReader {
                     val parts = pending ?: reader.readLine()?.also { lineNumber++ }?.let { parse(it, delimiter) } ?: break
                     pending = null
                     if (parts.all { it.isBlank() }) continue
-                    require(parts.size >= 5) { "CSV inválido na linha $lineNumber: esperado timestamp,open,high,low,close" }
+                    require(parts.size >= 5) { "CSV inválido na linha $lineNumber: são necessárias as colunas data/hora, abertura, máxima, mínima e fechamento." }
 
                     val timestamp = parseTimestamp(parts[0])
-                        ?: throw IllegalArgumentException("Timestamp inválido na linha $lineNumber: ${parts[0]}")
+                        ?: throw IllegalArgumentException("Data/hora inválida na linha $lineNumber.")
                     val open = number(parts[1])
                         ?: throw IllegalArgumentException("Abertura inválida na linha $lineNumber.")
                     val high = number(parts[2])
