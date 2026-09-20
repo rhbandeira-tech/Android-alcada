@@ -79,6 +79,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
     val strategies by vm.strategies.collectAsState()
     var intensive by rememberSaveable { mutableStateOf(false) }
     var candidates by rememberSaveable { mutableFloatStateOf(2_000f) }
+    var researchPayout by rememberSaveable { mutableFloatStateOf(.85f) }
     val processors = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
     var threads by rememberSaveable { mutableFloatStateOf(minOf(2, processors).toFloat()) }
     var memoryMb by rememberSaveable { mutableFloatStateOf(256f) }
@@ -95,6 +96,8 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
                         }
                         Switch(checked = intensive, onCheckedChange = { intensive = it }, enabled = !state.running)
                     }
+                    Text("Payout da pesquisa: ${(researchPayout * 100).toInt()}% • equilíbrio ${pct(1.0 / (1.0 + researchPayout))}")
+                    Slider(researchPayout, { researchPayout = it }, valueRange = .5f..1f, enabled = !state.running)
                     Text("Orçamento: ${candidates.toInt()} candidatos")
                     Slider(candidates, { candidates = it }, valueRange = 500f..10_000f, steps = 18, enabled = !state.running)
                     if (intensive) {
@@ -108,7 +111,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
                 }
             }
         }
-        item { ActionPanel(state, "Pesquisa local", "${candidates.toInt()} candidatos • validação temporal • busca evolutiva", { vm.runResearch(ResearchOptions(candidates.toInt(), intensive = intensive, threads = if (intensive) threads.toInt() else null, memoryMb = if (intensive) memoryMb.toInt() else null)) }, vm::cancelResearch) }
+        item { ActionPanel(state, "Pesquisa local", "${candidates.toInt()} candidatos • validação temporal • busca evolutiva", { vm.runResearch(ResearchOptions(candidates.toInt(), intensive = intensive, threads = if (intensive) threads.toInt() else null, memoryMb = if (intensive) memoryMb.toInt() else null, payout = researchPayout.toDouble())) }, vm::cancelResearch) }
         if (state.running) item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (state.paused) Button(onClick = vm::resumeResearch, modifier = Modifier.weight(1f)) { Icon(Icons.Default.PlayArrow, null); Text("Retomar") } else OutlinedButton(onClick = vm::pauseResearch, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Pause, null); Text("Pausar") } } }
         if (!state.running && state.progress >= 1f) item { OutlinedButton(onClick = vm::repeatResearch, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Repetir pesquisa com a mesma configuração") } }
         if(strategies.isNotEmpty()) {
