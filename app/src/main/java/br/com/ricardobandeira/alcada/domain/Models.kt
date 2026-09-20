@@ -57,6 +57,6 @@ data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2,
         require(maxCandidates in 1..1_000_000) { "A pesquisa deve avaliar entre 1 e 1.000.000 de candidatos." }
         require(threads in 1..256) { "A quantidade de processadores deve ficar entre 1 e 256." }
         require(memoryMb in 64..16_384) { "A memória reservada deve ficar entre 64 MB e 16 GB." }
-        require(minimumTrades > 0) { "O mínimo de operações precisa ser positivo." }
+        require(minimumTrades in 1..100_000) { "O mínimo de operações deve ficar entre 1 e 100.000." }
     }
 }
