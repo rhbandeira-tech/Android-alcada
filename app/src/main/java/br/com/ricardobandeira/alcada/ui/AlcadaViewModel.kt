@@ -61,7 +61,8 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         val power = app.getSystemService(Context.POWER_SERVICE) as PowerManager
         val percent = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).takeIf { it in 0..100 }
         val charging = battery.isCharging
-        return DeviceHealth(percent, charging, power.currentThermalStatus)
+        val thermal = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) power.currentThermalStatus else PowerManager.THERMAL_STATUS_NONE
+        return DeviceHealth(percent, charging, thermal)
     }
     fun refreshDeviceHealth() { _deviceHealth.value = readDeviceHealth() }
     private fun friendlyError(error: Throwable): String {
