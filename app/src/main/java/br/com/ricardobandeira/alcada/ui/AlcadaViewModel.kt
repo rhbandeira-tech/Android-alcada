@@ -175,6 +175,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         val health = _deviceHealth.value
         if (options.intensive && health.thermalStatus >= PowerManager.THERMAL_STATUS_SEVERE) return failResearch("O aparelho está muito quente. Aguarde a temperatura baixar antes da pesquisa intensiva.")
         if (options.intensive && !health.charging && (health.batteryPercent ?: 100) < 20) return failResearch("A bateria está abaixo de 20%. Conecte o carregador ou use o modo normal.")
+        if (options.intensive && health.thermalStatus >= PowerManager.THERMAL_STATUS_MODERATE && !health.charging) return failResearch("A temperatura do aparelho já está elevada. Reduza a intensidade ou conecte o carregador após o resfriamento.")
         lastResearchOptions = options
         if (options.candidates !in 100..100_000) return failResearch("Escolha entre 100 e 100.000 candidatos.")
         if (options.minimumTrades !in 5..10_000) return failResearch("O mínimo de operações deve ficar entre 5 e 10.000.")
