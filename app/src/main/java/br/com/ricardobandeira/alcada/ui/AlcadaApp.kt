@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -117,8 +120,8 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
         if (state.running) item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (state.paused) Button(onClick = vm::resumeResearch, modifier = Modifier.weight(1f)) { Icon(Icons.Default.PlayArrow, null); Text("Retomar") } else OutlinedButton(onClick = vm::pauseResearch, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Pause, null); Text("Pausar") } } }
         if (!state.running && state.progress >= 1f) item { OutlinedButton(onClick = vm::repeatResearch, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Repetir pesquisa com a mesma configuração") } }
         if(strategies.isNotEmpty()) {
-            item { SectionTitle("Descobertas persistidas", "Classificação considera robustez, expectativa e desempenho fora da amostra") }
-            items(strategies) { StrategyCard(it) }
+            item { SectionTitle("Descobertas persistidas", "Ordene os resultados e compare os campeões de cada perfil") }
+            item { StrategyRankingControls(strategies) }
         } else item { EmptyState(Icons.Default.AutoGraph, "Ainda sem descobertas", "A busca mantém somente candidatos com amostra mínima e validação fora da amostra.") }
     }
 }
