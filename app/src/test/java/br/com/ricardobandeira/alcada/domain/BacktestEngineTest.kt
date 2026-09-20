@@ -134,4 +134,9 @@ class BacktestEngineTest {
         val metrics = BacktestMetrics(1, 1, 1.0, 1.0, Double.POSITIVE_INFINITY, 1.0, 0.0)
         BacktestResult(metrics, listOf(Trade(1, 2, 1.0, true)), emptyList(), listOf(0.0), listOf(1.0))
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `metricas rejeitam operacoes fora de ordem`() {
+        BacktestEngine.metrics(listOf(Trade(2, 3, 1.0, true), Trade(1, 2, -1.0, false)))
+    }
 }
