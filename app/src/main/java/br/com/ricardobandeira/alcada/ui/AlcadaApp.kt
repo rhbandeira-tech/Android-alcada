@@ -479,7 +479,7 @@ private fun scriptRule(encoded: String, language: String, direction: String? = n
     val p = encoded.split(':')
     val feature = p.getOrNull(0) ?: return null
     val op = p.getOrNull(1) ?: return null
-    val value = p.getOrNull(2)?.toDoubleOrNull()?.toString() ?: return null
+    val numericValue = p.getOrNull(2)?.toDoubleOrNull() ?: return null\n    val value = numericValue.toString()\n    if (language == "TradingView" && feature == "sessionUtc") {\n        return when (numericValue.toInt()) {\n            1 -> "(hour(time, \\"UTC\\") >= 0 and hour(time, \\"UTC\\") <= 6)"\n            2 -> "(hour(time, \\"UTC\\") >= 7 and hour(time, \\"UTC\\") <= 12)"\n            3 -> "(hour(time, \\"UTC\\") >= 13 and hour(time, \\"UTC\\") <= 20)"\n            else -> null\n        }\n    }
     if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio")) feature + " " + op + " " + value else null
     val expression = when (feature) {
         "wickBodyRatio" -> "(math.max(high-open, high-close)/math.max(math.abs(close-open),syminfo.mintick))"
