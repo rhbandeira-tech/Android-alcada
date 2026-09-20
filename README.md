@@ -1,16 +1,60 @@
 # Alçada
 
-Aplicativo Android de pesquisa quantitativa e backtesting local, por Ricardo Bandeira.
+**Pesquisa quantitativa e backtesting local para Android, por Ricardo Bandeira.**
 
-O motor de pesquisa roda no próprio Android. GitHub Actions é usado somente para testar e compilar o APK.
+Alçada é um laboratório mobile, não um robô de execução de ordens. Todo cálculo quantitativo acontece no aparelho; a automação do GitHub somente testa e produz o APK. Resultados são históricos/experimentais e **não garantem retorno futuro**.
 
-## Base entregue
-- Jetpack Compose, tema escuro e navegação principal.
-- Quatro perfis: Conservador, Moderado, Agressivo e Experimental.
-- Núcleo de geração combinatória de estratégias por pavio/corpo, direção e expiração.
-- Backtest de opções binárias com payout configurável no motor.
-- Importador CSV inicial OHLC.
-- Testes unitários de payout e features de candle.
-- Workflow GitHub Actions para gerar APK automaticamente.
+## Estado funcional
 
-> Resultados de backtest são históricos e não garantem desempenho futuro.
+- Aplicativo Kotlin/Compose Material 3 com identidade grafite, logo vetorial/adaptive icon e navegação simplificada em Início, Analisar, Testar e Mais.
+- Fluxo Android completo de seleção e importação de CSV, cópia privada, validação em chunks, metadados Room e seleção do dataset em pesquisa/backtest.
+- ViewModel conecta interface, Room e motores fora da thread principal, com carregamento, progresso, erro, estado vazio e cancelamento cooperativo.
+- Domínio independente do Android para candles, features, regras serializáveis, opções binárias e Forex (SL, TP, trailing, saída temporal, spread/custo).
+- Pesquisa evolucionária determinística por seed e em `Flow`: gera e avalia candidatos de forma incremental, poda por requisitos mínimos e mantém somente o melhor, sem materializar o espaço combinatório.
+- Features iniciais: geometria OHLC, corpo, pavios, razões pavio/corpo e pavio/range, range, ATR, volatilidade, gap e momentum. O limite temporal exclusivo das janelas evita leitura do futuro.
+- CSV processado como `Sequence` de chunks; metadados de dataset separados do cache bruto.
+- Room para pesquisas, estratégias, backtests, validações, datasets, eventos econômicos e configurações. A limpeza WorkManager remove apenas arquivos brutos sem apagar resultados.
+- Interfaces explícitas para Dukascopy e agenda econômica. Nenhuma URL, chave ou API não confirmada foi inventada.
+- Testes unitários para features, fronteira temporal, payout/break-even, importação em chunks, Monte Carlo, analytics e segurança/paridade dos scripts exportados.
+- Gráficos derivados exclusivamente de trades/candles calculados: equity, drawdown, rolling win rate, distribuição, hora/dia, heatmap, IS/OOS, ativo, expiração e relação pavio/movimento futuro. Gráficos e células analíticas têm inspeção/interação e ajuda contextual.
+- Ranking por perfil ordenável por robustez, fora da amostra, fator de lucro ou resultado esperado, com campeões por perfil, comparação direta e auditoria de evidências.
+- Tela de teste inclui diagnóstico numérico, leitura operacional, retenção IS/OOS com tamanho das amostras e painel de validação com Monte Carlo.
+- Exportação de sinais para TradingView/Pine, MQL5 e Lua. Regras não representáveis são bloqueadas com `REVISÃO OBRIGATÓRIA`; os scripts gerados não enviam ordens reais.
+
+## Arquitetura
+
+```text
+ui/       Compose, ViewModel e identidade visual; nunca executa loops quantitativos na main thread
+domain/   modelos, features, backtest e pesquisa (`Dispatchers.Default` + cancelamento cooperativo)
+data/     Room, CSV e contratos de provedores externos
+work/     manutenção persistente do cache local
+```
+
+A estratégia contém mercado, ativo, timeframe, direção, regras de entrada, regra de saída e seed. Resultados distinguem taxa de acerto, expectativa, fator de lucro, queda máxima, equilíbrio e robustez fora da amostra. O ranking por perfil permite comparar robustez, risco e desempenho sem ordenar somente pela taxa de acerto. O rótulo de campeão representa o líder no critério selecionado, não uma garantia de desempenho futuro.
+
+## Dados e reprodução
+
+O formato CSV esperado é `timestamp,open,high,low,close[,volume,spread]`, com timestamp Unix em milissegundos. A leitura é incremental (padrão 4.096 linhas). Dados brutos não usados há sete dias são removidos, mas metadados e resultados permanecem. “Reproduzir pesquisa” deve resolver o dataset pelo metadado e baixá-lo novamente pelo `HistoricalDataProvider`.
+
+### Integrações ainda externas
+
+O usuário/integrador deve configurar uma implementação documentada de `HistoricalDataProvider` para Dukascopy e de `EconomicCalendarProvider` para NFP, CPI, juros, FOMC, ECB, PIB, PMI, desemprego e discursos. O modelo da agenda já prevê moeda, impacto, instante, actual, forecast, previous e surpresa; o repositório não contém credenciais nem supõe um fornecedor.
+
+## Build
+
+Requisitos: Android SDK 35 e JDK 17.
+
+```bash
+gradle testDebugUnitTest
+gradle lintDebug
+gradle assembleDebug
+```
+
+O APK sai em `app/build/outputs/apk/debug/app-debug.apk`. O repositório não versiona o Gradle Wrapper porque o seu JAR é um binário; `.github/workflows/android.yml` provisiona declarativamente o Gradle 8.9, executa os mesmos comandos e publica `alcada-debug-apk` como artefato instalável do workflow, sem adicioná-lo ao Git.
+
+## Próximas evoluções sem romper o núcleo
+
+- Cliente Dukascopy escolhido/configurado pelo responsável pelo produto e provider de calendário econômico confiável.
+- Foreground WorkManager para pesquisas que precisem sobreviver ao encerramento forçado do processo; a execução atual é cancelável e preservada enquanto o processo está ativo.
+- Validação temporal e Monte Carlo podem continuar recebendo refinamentos estatísticos; a versão atual já executa divisão dentro/fora da amostra, folds temporais, bootstrap em blocos e leitura conjunta das evidências.
+- Benchmark em aparelhos representativos para refinar a calibração automática; a interface atual já acompanha bateria, carregamento e estado térmico.

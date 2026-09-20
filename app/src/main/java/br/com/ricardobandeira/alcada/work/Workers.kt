@@ -1,0 +1,34 @@
+package br.com.ricardobandeira.alcada.work
+
+import android.content.Context
+import androidx.room.Room
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import br.com.ricardobandeira.alcada.data.AlcadaDatabase
+import java.io.File
+import java.util.concurrent.TimeUnit
+
+/** Deletes only raw cache files; metadata, strategies, backtests and validation remain reproducible. */
+class RawDataCleanupWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        if (isStopped) return Result.failure()
+        val db = Room.databaseBuilder(applicationContext, AlcadaDatabase::class.java, "alcada.db").build()
+        return try {
+            val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)
+            db.dao().expiredDatasets(cutoff).forEach { dataset ->
+                if (isStopped) return Result.failure()
+                val raw = dataset.rawPath?.let(::File)
+                if (raw == null || !raw.exists() || raw.delete()) {
+                    db.dao().rawDataDeleted(dataset.id)
+                } else {
+                    return Result.retry()
+                }
+            }
+            Result.success()
+        } catch (_: java.io.IOException) { Result.retry() }
+        catch (_: android.database.sqlite.SQLiteException) { Result.retry() }
+        catch (_: Exception) { Result.failure() }
+        finally { db.close() }
+    }
+}
+
