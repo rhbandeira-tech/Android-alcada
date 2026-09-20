@@ -262,6 +262,20 @@ private fun Metrics(metrics: BacktestMetrics) {
         metrics.breakEvenWinRate?.let { equilibrium ->
             Text("Taxa mínima para equilíbrio: " + pct(equilibrium) + " • margem observada: " + pct(metrics.winRate - equilibrium), color = if (metrics.winRate >= equilibrium) Positive else Negative, style = MaterialTheme.typography.bodySmall)
         }
+        val edge = metrics.breakEvenWinRate?.let { metrics.winRate - it }
+        val diagnostics = buildList {
+            add(if (metrics.trades >= 100) "Amostra com ${metrics.trades} operações: base mais informativa para comparação." else "Amostra com ${metrics.trades} operações: trate conclusões como preliminares.")
+            add(if (metrics.profitFactor > 1.0) "Fator de lucro acima de 1: ganhos brutos superaram perdas brutas." else "Fator de lucro em 1 ou abaixo: não houve vantagem bruta observada.")
+            add(if (metrics.expectancy > 0.0) "Resultado esperado por operação foi positivo no histórico." else "Resultado esperado por operação não foi positivo no histórico.")
+            edge?.let { add(if (it > 0.0) "Taxa de acerto ficou ${pct(it)} acima do ponto de equilíbrio." else "Taxa de acerto ficou ${pct(-it)} abaixo do ponto de equilíbrio.") }
+        }
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f))) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Diagnóstico dos números", fontWeight = FontWeight.Bold)
+                diagnostics.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+                Text("Leitura histórica; robustez exige validação fora da amostra e estabilidade em diferentes períodos.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         Text("Toque em qualquer número para entender o que ele mede.", style = MaterialTheme.typography.labelSmall, color = Analytic)
     }
     open?.let { metric -> AlertDialog(onDismissRequest = { open = null }, title = { Text(metric) }, text = { Text(metricExplanation(metric, metrics)) }, confirmButton = { TextButton(onClick = { open = null }) { Text("Entendi") } }) }
