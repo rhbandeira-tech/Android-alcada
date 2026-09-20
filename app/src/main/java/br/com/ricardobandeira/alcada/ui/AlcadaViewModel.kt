@@ -42,11 +42,24 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     private var importJob: Job? = null
     private var researchJob: Job? = null
     private var backtestJob: Job? = null
-    private fun friendlyError(error: Throwable): String = when (error) {
-        is java.io.FileNotFoundException -> "O arquivo de dados não está mais disponível. Importe-o novamente."
-        is java.util.zip.ZipException -> "O arquivo ZIP está corrompido ou não é compatível."
-        is IllegalArgumentException -> error.message?.takeIf { it.length <= 140 } ?: "Os dados informados são inválidos."
-        else -> "Não foi possível concluir a operação. Verifique os dados e tente novamente."
+    private fun friendlyError(error: Throwable): String {
+        val message = error.message.orEmpty()
+        return when {
+            error is java.io.FileNotFoundException -> "O arquivo de dados não está mais disponível. Importe-o novamente."
+            error is java.util.zip.ZipException -> "O arquivo ZIP está corrompido ou não é compatível."
+            message.contains("pelo menos duas velas", true) || message.contains("ao menos duas velas", true) ->
+                "O arquivo precisa conter pelo menos duas velas válidas."
+            message.contains("ordem cronológica", true) ->
+                "Os registros precisam estar em ordem cronológica."
+            message.contains("arquivos demais", true) || message.contains("limite seguro", true) ->
+                "O arquivo excede o limite seguro de importação."
+            message.contains("caminho inseguro", true) ->
+                "O ZIP contém uma estrutura de pastas não permitida."
+            message.contains("Nenhum CSV válido", true) || message.contains("não contém velas válidas", true) ->
+                "Nenhum dado de vela válido foi encontrado."
+            error is IllegalArgumentException -> "Os dados informados são inválidos ou incompatíveis."
+            else -> "Não foi possível concluir a operação. Verifique os dados e tente novamente."
+        }
     }
 
     fun selectDataset(id: String) { _selectedDataset.value = id }
