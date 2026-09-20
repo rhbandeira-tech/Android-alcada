@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:name=".AlcadaApplication" android:allowBackup="false" android:label="Alçada"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@style/Theme.Alcada.Starting" android:usesCleartextTraffic="false">
+        android:theme="@style/Theme.Alcada.Starting" android:usesCleartextTraffic="false" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/>
