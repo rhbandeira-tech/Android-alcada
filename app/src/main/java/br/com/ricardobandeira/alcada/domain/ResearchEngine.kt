@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.util.Random
 
-data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: EvaluatedStrategy?, val finished: Boolean = false)
+data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: EvaluatedStrategy?, val leaders: List<EvaluatedStrategy> = emptyList(), val finished: Boolean = false)
 
 /** Evolutionary, bounded search: candidates are generated and evaluated one-by-one, never materialized. */
 class ResearchEngine {
@@ -16,13 +16,15 @@ class ResearchEngine {
         require(candles.size >= 20)
         val random = Random(budget.seed)
         var accepted = 0; var best: EvaluatedStrategy? = null
+        val elite = mutableListOf<EvaluatedStrategy>()
         repeat(budget.maxCandidates) { n ->
             currentCoroutineContext().ensureActive()
             // After the initial population, mutate/recombine the current elite without retaining a huge population.
-            val eliteRule = best?.strategy?.entries?.firstOrNull()
+            val parent = if (elite.isEmpty()) best else elite[random.nextInt(elite.size)]
+            val eliteRule = parent?.strategy?.entries?.firstOrNull()
             val ratio = if (eliteRule != null && n % 3 != 0) (eliteRule.threshold + random.nextGaussian() * .35).coerceIn(.25, 8.0) else 0.5 + random.nextDouble() * 4.5
-            val direction = if (best != null && n % 4 != 0) best!!.strategy.direction else if (random.nextBoolean()) Direction.CALL else Direction.PUT
-            val eliteExpiry = best?.strategy?.exit?.bars
+            val direction = if (parent != null && n % 4 != 0) parent.strategy.direction else if (random.nextBoolean()) Direction.CALL else Direction.PUT
+            val eliteExpiry = parent?.strategy?.exit?.bars
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             // Signals use only the current/past candle; the future is consulted exclusively by the backtest.
             val signals = (1 until candles.size - expiration).asSequence()
@@ -38,17 +40,28 @@ class ResearchEngine {
                 accepted++
                 val gap = kotlin.math.abs(ins.winRate - oos.winRate)
                 val sampleFactor = (oos.trades.toDouble() / budget.minimumTrades.coerceAtLeast(1)).coerceAtMost(1.0)
-                val robustness = (1.0 - gap * 2).coerceIn(0.0, 1.0) * sampleFactor
+                val foldSize = candles.size / 3
+                val stableFolds = (0 until 3).count { fold ->
+                    val start = fold * foldSize
+                    val end = if (fold == 2) candles.size else (fold + 1) * foldSize
+                    val foldMetrics = BacktestEngine.binary(candles, signals.filter { it.first >= start && it.first + expiration < end }, expiration, .8)
+                    foldMetrics.trades >= maxOf(3, budget.minimumTrades / 3) && foldMetrics.expectancy > 0.0 && foldMetrics.profitFactor > 1.0
+                }
+                val stability = stableFolds / 3.0
+                val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .55 + stability * .35 + sampleFactor * .10).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", 1, direction, listOf(EntryRule("wickBodyRatio", ">=", ratio)), ExitRule(bars = expiration), budget.seed)
                 val result = EvaluatedStrategy(strategy, ins, oos.winRate, robustness,
                     if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
-                    gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0)
+                    gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5)
                 val score = { e: EvaluatedStrategy -> e.robustness * .5 + e.metrics.expectancy.coerceIn(-1.0, 1.0) * .3 - e.metrics.maxDrawdown * .02 }
                 if (best == null || score(result) > score(best!!)) best = result
+                elite += result
+                elite.sortByDescending(score)
+                if (elite.size > 24) elite.removeAt(elite.lastIndex)
             }
-            if (n % 25 == 0) emit(ResearchProgress(n + 1, accepted, best))
+            if (n % 25 == 0) emit(ResearchProgress(n + 1, accepted, best, elite.toList()))
         }
-        emit(ResearchProgress(budget.maxCandidates, accepted, best, true))
+        emit(ResearchProgress(budget.maxCandidates, accepted, best, elite.toList(), true))
     }.flowOn(Dispatchers.Default)
 }
