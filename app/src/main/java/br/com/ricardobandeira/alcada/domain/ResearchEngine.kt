@@ -120,15 +120,19 @@ class ResearchEngine {
                 val gap = kotlin.math.abs(ins.winRate - oos.winRate)
                 val sampleFactor = (oos.trades.toDouble() / budget.minimumTrades.coerceAtLeast(1)).coerceAtMost(1.0)
                 val foldSize = researchCandles.size / 4
-                val forwardTests = (1..3).map { fold ->
-                    val start = fold * foldSize
-                    val end = if (fold == 3) researchCandles.size else (fold + 1) * foldSize
-                    BacktestEngine.binary(
-                        researchCandles,
-                        signals.filter { it.first >= start && it.first + expiration < end },
-                        expiration,
-                        binaryPayout
-                    )
+                val forwardTests = coroutineScope {
+                    (1..3).map { fold -> async(Dispatchers.Default) {
+                        evaluationSlots.withPermit {
+                            val start = fold * foldSize
+                            val end = if (fold == 3) researchCandles.size else (fold + 1) * foldSize
+                            BacktestEngine.binary(
+                                researchCandles,
+                                signals.filter { it.first >= start && it.first + expiration < end },
+                                expiration,
+                                binaryPayout
+                            )
+                        }
+                    } }.map { it.await() }
                 }
                 val stableFolds = forwardTests.count {
                     it.trades >= maxOf(3, budget.minimumTrades / 3) && it.expectancy > 0.0 && it.profitFactor > 1.0
