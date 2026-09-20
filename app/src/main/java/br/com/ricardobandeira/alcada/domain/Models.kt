@@ -62,7 +62,15 @@ data class BacktestResult(
 data class BacktestMetrics(
     val trades: Int, val wins: Int, val winRate: Double, val netProfit: Double, val profitFactor: Double,
     val expectancy: Double, val maxDrawdown: Double, val breakEvenWinRate: Double? = null
-)
+) {
+    init {
+        require(trades >= 0 && wins in 0..trades) { "Contagem de operações inválida." }
+        require(winRate.isFinite() && winRate in 0.0..1.0) { "A taxa de acerto precisa ficar entre 0% e 100%." }
+        require(netProfit.isFinite() && expectancy.isFinite() && maxDrawdown.isFinite() && maxDrawdown >= 0.0) { "Métricas do teste histórico inválidas." }
+        require(profitFactor >= 0.0 && !profitFactor.isNaN()) { "O fator de lucro é inválido." }
+        require(breakEvenWinRate == null || (breakEvenWinRate.isFinite() && breakEvenWinRate in 0.0..1.0)) { "A taxa de equilíbrio é inválida." }
+    }
+}
 data class EvaluatedStrategy(val strategy: StrategyDefinition, val metrics: BacktestMetrics, val oosWinRate: Double, val robustness: Double, val status: ValidationStatus, val overfitWarning: Boolean, val oosTrades: Int = 0, val oosExpectancy: Double = 0.0, val oosProfitFactor: Double = 0.0, val stableForwardFolds: Int = 0, val forwardFolds: Int = 0, val monteCarloP05: Double = 0.0, val monteCarloP95Drawdown: Double = 0.0)
 
 data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2, val memoryMb: Int = 256, val seed: Long = 42, val minimumTrades: Int = 30) {
