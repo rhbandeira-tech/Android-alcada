@@ -55,8 +55,17 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                 } else ignored++
             }.onFailure { issues += ImportIssue(source.name, friendly(it)) }
         }
-        require(canonical.isNotEmpty()) { issues.firstOrNull()?.message ?: "Nenhum CSV válido foi encontrado." }
-        val merge = try { merge(canonical, output) } finally { canonical.forEach(File::delete); sessionDir.deleteRecursively() }
+        if (canonical.isEmpty()) {
+            sessionDir.deleteRecursively()
+            throw IllegalArgumentException(issues.firstOrNull()?.message ?: "Nenhum CSV válido foi encontrado.")
+        }
+        val merge = try { merge(canonical, output) } catch (error: Throwable) {
+            output.delete()
+            throw error
+        } finally {
+            canonical.forEach(File::delete)
+            sessionDir.deleteRecursively()
+        }
         onProgress(sources.size, sources.size, "Concluído")
         return ImportSummary(sources.size, csvFiles, merge.valid, merge.duplicates, ignored, merge.first, merge.last, issues)
     }
