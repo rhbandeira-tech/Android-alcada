@@ -12,7 +12,7 @@ import br.com.ricardobandeira.alcada.work.RawDataCleanupWorker
 import java.util.concurrent.TimeUnit
 
 class AlcadaApplication : Application() {
-    val database by lazy { Room.databaseBuilder(this, AlcadaDatabase::class.java, "alcada.db").fallbackToDestructiveMigration().build() }
+    val database by lazy { Room.databaseBuilder(this, AlcadaDatabase::class.java, "alcada.db").build() }
     override fun onCreate() {
         super.onCreate()
         val cleanup = PeriodicWorkRequestBuilder<RawDataCleanupWorker>(1, TimeUnit.DAYS)
