@@ -39,7 +39,17 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                     }
                 } else if (source.name.lowercase().endsWith(".csv")) {
                     val temp = File.createTempFile("alcada_", ".csv", workDir)
-                    source.open().use { input -> FileOutputStream(temp).use { input.copyTo(it) } }
+                    source.open().use { input -> FileOutputStream(temp).use { out ->
+                        val buffer = ByteArray(64 * 1024)
+                        var copied = 0L
+                        while (true) {
+                            val n = input.read(buffer)
+                            if (n < 0) break
+                            copied += n
+                            require(copied <= maxExpandedBytes) { "CSV excede o limite seguro de tamanho." }
+                            out.write(buffer, 0, n)
+                        }
+                    } }
                     canonical += normalize(temp, source.name); temp.delete(); csvFiles++
                 } else ignored++
             }.onFailure { issues += ImportIssue(source.name, friendly(it)) }
@@ -92,5 +102,5 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
     private fun readCanonical(reader: BufferedReader): Candle? { val line = reader.readLine() ?: return null; val p = line.split(','); return Candle(p[0].removePrefix("@").toLong(),p[1].toDouble(),p[2].toDouble(),p[3].toDouble(),p[4].toDouble(),p[5].toDouble(),p[6].toDouble()) }
     // Canonical files use epoch milliseconds. The @ marker prevents a second seconds-to-milliseconds conversion.
     private fun row(c: Candle) = listOf("@${c.epochMillis}", c.open, c.high, c.low, c.close, c.volume, c.spread).joinToString(",")
-    private fun friendly(t: Throwable): String = when { t.message?.contains("caminho inseguro", true) == true -> t.message!!; t.message?.contains("limite seguro", true) == true -> t.message!!; t is java.util.zip.ZipException -> "O arquivo ZIP está inválido ou corrompido."; else -> t.message ?: "Não foi possível processar este arquivo." }
+    private fun friendly(t: Throwable): String = when { t.message?.contains("caminho inseguro", true) == true -> t.message!!; t.message?.contains("limite seguro", true) == true -> t.message!!; t.message?.contains("limite seguro de tamanho", true) == true -> t.message!!; t is java.util.zip.ZipException -> "O arquivo ZIP está inválido ou corrompido."; else -> t.message ?: "Não foi possível processar este arquivo." }
 }
