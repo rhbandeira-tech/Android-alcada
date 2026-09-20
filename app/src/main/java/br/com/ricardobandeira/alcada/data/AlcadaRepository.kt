@@ -42,6 +42,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     }
 
     suspend fun importCsv(uri: Uri, displayName: String): DatasetEntity = withContext(Dispatchers.IO) {
+        require(displayName.isNotBlank()) { "O arquivo precisa ter um nome válido." }
         val id = UUID.randomUUID().toString()
         val directory = File(context.filesDir, "datasets").apply { mkdirs() }
         val target = File(directory, "$id.csv")
