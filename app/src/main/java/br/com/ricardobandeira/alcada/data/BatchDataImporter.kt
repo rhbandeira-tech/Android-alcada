@@ -98,7 +98,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
             output.bufferedWriter().use { writer ->
                 writer.appendLine("timestamp,open,high,low,close,volume,spread")
                 while (queue.isNotEmpty()) {
-                    val cursor = queue.poll(); val c = cursor.candle
+                    val cursor = queue.remove(); val c = cursor.candle
                     if (lastTime == c.epochMillis) duplicates++ else { writer.appendLine(row(c)); valid++; first = first ?: c.epochMillis; last = c.epochMillis; lastTime = c.epochMillis }
                     readCanonical(cursor.reader)?.let { next ->
                         cursor.candle = next
