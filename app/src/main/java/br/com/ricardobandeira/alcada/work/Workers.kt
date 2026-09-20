@@ -11,10 +11,12 @@ import java.util.concurrent.TimeUnit
 /** Deletes only raw cache files; metadata, strategies, backtests and validation remain reproducible. */
 class RawDataCleanupWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
+        if (isStopped) return Result.failure()
         val db = Room.databaseBuilder(applicationContext, AlcadaDatabase::class.java, "alcada.db").build()
         return try {
             val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)
             db.dao().expiredDatasets(cutoff).forEach { dataset ->
+                if (isStopped) return Result.failure()
                 val raw = dataset.rawPath?.let(::File)
                 if (raw == null || !raw.exists() || raw.delete()) {
                     db.dao().rawDataDeleted(dataset.id)
