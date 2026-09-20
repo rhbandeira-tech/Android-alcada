@@ -104,6 +104,8 @@ class StrategyScriptExportTest {
             assertNull(scriptRule("wickBodyRatio:!=:2.0", language, "CALL"))
             assertNull(scriptRule("wickBodyRatio:>=:NaN", language, "CALL"))
             assertNull(scriptRule("wickBodyRatio:>=:Infinity", language, "CALL"))
+            assertNull(scriptRule("wickBodyRatio:>=:2.0:unexpected", language, "CALL"))
+            assertNull(scriptRule("wickBodyRatio:>=:", language, "CALL"))
         }
     }
 
