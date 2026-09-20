@@ -7,6 +7,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,6 +33,15 @@ class ResearchEngine {
         val batchSize = minOf(workerCount * 4, 64)
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
+        val evaluationSlots = Semaphore(workerCount)
+        suspend fun parallelPreflight(source: List<Candle>, factor: Int): Boolean = coroutineScope {
+            val checks = listOf<suspend () -> Boolean>(
+                { source.size >= 20 },
+                { source.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis } },
+                { factor in 1..5 }
+            )
+            checks.map { check -> async(Dispatchers.Default) { evaluationSlots.withPermit { check() } } }.awaitAll().all { it }
+        }
         require(budget.memoryMb >= 64) { "A pesquisa precisa de pelo menos 64 MB de orçamento de memória." }
         var accepted = 0; var best: EvaluatedStrategy? = null
         val elite = mutableListOf<EvaluatedStrategy>()
@@ -52,7 +66,7 @@ class ResearchEngine {
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             val timeframeFactor = when { n % 11 == 0 -> 5; n % 7 == 0 -> 3; else -> 1 }
             val researchCandles = if (timeframeFactor == 1) candles else FeatureEngine.aggregate(candles, timeframeFactor)
-            if (researchCandles.size < 20) return@repeat
+            if (!parallelPreflight(researchCandles, timeframeFactor)) return@repeat
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
             currentCoroutineContext().ensureActive()
             val sessionGate = n % 6
