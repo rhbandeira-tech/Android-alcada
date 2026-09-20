@@ -26,6 +26,22 @@ object FeatureEngine {
         }.average()
     }
 
+    fun aggregate(candles: List<Candle>, factor: Int): List<Candle> {
+        require(factor > 0) { "O fator do período gráfico deve ser positivo." }
+        if (factor == 1) return candles
+        return candles.chunked(factor).filter { it.size == factor }.map { group ->
+            Candle(
+                epochMillis = group.first().epochMillis,
+                open = group.first().open,
+                high = group.maxOf { it.high },
+                low = group.minOf { it.low },
+                close = group.last().close,
+                volume = group.sumOf { it.volume },
+                spread = group.map { it.spread }.average()
+            )
+        }
+    }
+
     fun sessionHour(epochMillis: Long): Int =
         java.time.Instant.ofEpochMilli(epochMillis).atZone(java.time.ZoneOffset.UTC).hour
 
