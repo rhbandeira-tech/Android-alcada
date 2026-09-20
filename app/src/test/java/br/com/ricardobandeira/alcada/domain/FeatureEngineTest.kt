@@ -143,4 +143,10 @@ class FeatureEngineTest {
         assertEquals(30.0, result.volume, 1e-12)
         assertEquals(.03, result.spread, 1e-12)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `vela rejeita horario negativo`() { Candle(-1, 1.0, 1.1, .9, 1.0) }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `agregacao rejeita fator zero`() { FeatureEngine.aggregate(listOf(Candle(1, 1.0, 1.1, .9, 1.0)), 0) }
 }
