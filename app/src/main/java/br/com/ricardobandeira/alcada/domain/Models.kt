@@ -37,7 +37,13 @@ data class ExitRule(val stopLoss: Double? = null, val takeProfit: Double? = null
 data class StrategyDefinition(
     val id: String, val name: String, val market: Market, val symbol: String, val timeframeMinutes: Int,
     val direction: Direction, val entries: List<EntryRule>, val exit: ExitRule, val seed: Long
-)
+) {
+    init {
+        require(id.isNotBlank() && name.isNotBlank()) { "A estratégia precisa de identificação e nome." }
+        require(timeframeMinutes > 0) { "O período gráfico precisa ser positivo." }
+        require(entries.isNotEmpty()) { "A estratégia precisa de pelo menos uma regra de entrada." }
+    }
+}
 data class Trade(val entryTime: Long, val exitTime: Long, val pnl: Double, val won: Boolean)
 data class BacktestResult(
     val metrics: BacktestMetrics,
