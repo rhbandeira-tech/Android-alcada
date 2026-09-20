@@ -77,6 +77,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
 @Composable private fun DiscoverScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) {
     val state by vm.researchState.collectAsState()
     val strategies by vm.strategies.collectAsState()
+    val health by vm.deviceHealth.collectAsState()
     var intensive by rememberSaveable { mutableStateOf(false) }
     var candidates by rememberSaveable { mutableFloatStateOf(2_000f) }
     var researchPayout by rememberSaveable { mutableFloatStateOf(.85f) }
