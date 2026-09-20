@@ -50,6 +50,7 @@ class ResearchEngine {
             val maxSpreadRatio = if (n % 5 == 0) .10 + random.nextDouble() * .30 else null
             val minAtrRatio = if (n % 7 == 0) .35 + random.nextDouble() * 1.25 else null
             val sequenceGate = if (n % 9 == 0) 2 + random.nextInt(3) else null
+            val supportResistanceGate = if (n % 10 == 0) .15 + random.nextDouble() * .35 else null
             val rawSignals = SignalEngine.filteredWickSignals(
                 candles = researchCandles,
                 direction = direction,
@@ -61,7 +62,15 @@ class ResearchEngine {
             val spreadFiltered = maxSpreadRatio?.let { maximum -> rawSignals.filter { (index, _) -> FeatureEngine.spreadRangeRatio(researchCandles[index]) <= maximum } } ?: rawSignals
             val volatilityFiltered = minAtrRatio?.let { minimum -> spreadFiltered.filter { (index, _) -> index > 14 && FeatureEngine.atrRangeRatio(researchCandles, 14, index + 1) >= minimum } } ?: spreadFiltered
             val sequenceFiltered = sequenceGate?.let { minimum -> volatilityFiltered.filter { (index, _) -> kotlin.math.abs(FeatureEngine.candleColorSequence(researchCandles, index + 1)) >= minimum } } ?: volatilityFiltered
-            val signals = if (sessionGate == 0) sequenceFiltered else sequenceFiltered.filter { (index, _) ->
+            val levelFiltered = supportResistanceGate?.let { maximumFraction -> sequenceFiltered.filter { (index, _) ->
+                if (index < 20) false else {
+                    val (supportDistance, resistanceDistance) = FeatureEngine.supportResistanceDistance(researchCandles, 20, index + 1)
+                    val range = researchCandles[index].range.coerceAtLeast(1e-12)
+                    val directionalDistance = if (direction == Direction.CALL) resistanceDistance else supportDistance
+                    directionalDistance / range <= maximumFraction
+                }
+            } } ?: sequenceFiltered
+            val signals = if (sessionGate == 0) levelFiltered else levelFiltered.filter { (index, _) ->
                 val hour = FeatureEngine.sessionHour(researchCandles[index].epochMillis)
                 when (sessionGate) { 1 -> hour in 0..6; 2 -> hour in 7..12; 3 -> hour in 13..20; else -> true }
             }
@@ -97,7 +106,7 @@ class ResearchEngine {
                         EntryRule("wickBodyRatio", ">=", ratio),
                         EntryRule("bodyRangeRatio", "<=", bodyLimit),
                         EntryRule("closeLocation", if (direction == Direction.CALL) ">=" else "<=", if (direction == Direction.CALL) closeLocation else 1.0 - closeLocation)
-                    ) + listOfNotNull(maxSpreadRatio?.let { EntryRule("spreadRangeRatio", "<=", it) }) + listOfNotNull(if (sessionGate in 1..3) EntryRule("sessionUtc", "==", sessionGate.toDouble()) else null) + listOfNotNull(minAtrRatio?.let { EntryRule("atrRangeRatio", ">=", it) }) + listOfNotNull(sequenceGate?.let { EntryRule("candleSequence", ">=", it.toDouble()) }), ExitRule(bars = expiration), budget.seed)
+                    ) + listOfNotNull(maxSpreadRatio?.let { EntryRule("spreadRangeRatio", "<=", it) }) + listOfNotNull(if (sessionGate in 1..3) EntryRule("sessionUtc", "==", sessionGate.toDouble()) else null) + listOfNotNull(minAtrRatio?.let { EntryRule("atrRangeRatio", ">=", it) }) + listOfNotNull(sequenceGate?.let { EntryRule("candleSequence", ">=", it.toDouble()) }) + listOfNotNull(supportResistanceGate?.let { EntryRule("levelDistanceRatio", "<=", it) }), ExitRule(bars = expiration), budget.seed)
                 val result = EvaluatedStrategy(
                     strategy = strategy,
                     metrics = ins,
