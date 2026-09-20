@@ -14,7 +14,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
         require(sources.isNotEmpty()) { "Selecione pelo menos um arquivo." }
         workDir.mkdirs()
         val canonical = mutableListOf<File>(); val issues = mutableListOf<ImportIssue>()
-        var csvFiles = 0; var ignored = 0; var expanded = 0L; var entryCount = 0
+        var csvFiles = 0; var ignored = 0
         sources.forEachIndexed { index, source ->
             onProgress(index, sources.size, source.name)
             runCatching {
