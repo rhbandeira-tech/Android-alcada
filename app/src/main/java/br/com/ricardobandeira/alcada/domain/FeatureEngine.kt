@@ -26,6 +26,15 @@ object FeatureEngine {
         }.average()
     }
 
+    fun spreadRangeRatio(candle: Candle): Double =
+        if (candle.range <= 0.0) 0.0 else (candle.spread / candle.range).takeIf { it.isFinite() } ?: 0.0
+
+    fun atrRangeRatio(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
+        if (endExclusive <= 0) return 0.0
+        val range = candles[endExclusive - 1].range
+        return if (range <= 0.0) 0.0 else (atr(candles, period, endExclusive) / range).takeIf { it.isFinite() } ?: 0.0
+    }
+
     fun aggregate(candles: List<Candle>, factor: Int): List<Candle> {
         require(factor > 0) { "O fator do período gráfico deve ser positivo." }
         if (factor == 1) return candles
