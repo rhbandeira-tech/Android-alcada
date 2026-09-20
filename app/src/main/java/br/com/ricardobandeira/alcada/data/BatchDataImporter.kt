@@ -82,7 +82,7 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
             return MergeResult(valid, duplicates, first, last)
         } finally { readers.forEach { runCatching { it.close() } } }
     }
-    private fun readCanonical(reader: BufferedReader): Candle? { val line = reader.readLine() ?: return null; val p = line.split(','); return Candle(p[0].toLong(),p[1].toDouble(),p[2].toDouble(),p[3].toDouble(),p[4].toDouble(),p[5].toDouble(),p[6].toDouble()) }
-    private fun row(c: Candle) = listOf(c.epochMillis,c.open,c.high,c.low,c.close,c.volume,c.spread).joinToString(",")
+    private fun readCanonical(reader: BufferedReader): Candle? { val line = reader.readLine() ?: return null; val p = line.split(','); return Candle(p[0].removePrefix("@").toLong(),p[1].toDouble(),p[2].toDouble(),p[3].toDouble(),p[4].toDouble(),p[5].toDouble(),p[6].toDouble()) }
+    // Canonical files use epoch milliseconds. Prefix with '@' so CsvCandleReader does not reinterpret small synthetic/early epochs as Unix seconds.\n    private fun row(c: Candle) = listOf("@${c.epochMillis}",c.open,c.high,c.low,c.close,c.volume,c.spread).joinToString(",")
     private fun friendly(t: Throwable): String = when { t.message?.contains("caminho inseguro", true) == true -> t.message!!; t.message?.contains("limite seguro", true) == true -> t.message!!; t is java.util.zip.ZipException -> "O arquivo ZIP está inválido ou corrompido."; else -> t.message ?: "Não foi possível processar este arquivo." }
 }
