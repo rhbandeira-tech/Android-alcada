@@ -46,7 +46,8 @@ class ResearchEngine {
             if (researchCandles.size < 20) return@repeat
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
             currentCoroutineContext().ensureActive()
-            val signals = SignalEngine.filteredWickSignals(
+            val sessionGate = n % 6
+            val rawSignals = SignalEngine.filteredWickSignals(
                 candles = researchCandles,
                 direction = direction,
                 minimumWickBodyRatio = ratio,
@@ -54,6 +55,10 @@ class ResearchEngine {
                 minimumDirectionalClose = closeLocation,
                 limit = 5_000
             )
+            val signals = if (sessionGate == 0) rawSignals else rawSignals.filter { (index, _) ->
+                val hour = FeatureEngine.sessionHour(researchCandles[index].epochMillis)
+                when (sessionGate) { 1 -> hour in 0..6; 2 -> hour in 7..12; 3 -> hour in 13..20; else -> true }
+            }
             val split = (researchCandles.size * .7).toInt()
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
             val insSignals = signals.filter { it.first + expiration < split }
