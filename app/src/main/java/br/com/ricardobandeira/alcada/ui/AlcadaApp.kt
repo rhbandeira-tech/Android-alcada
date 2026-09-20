@@ -151,9 +151,11 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                 FilterChip(selected = profile == key, onClick = { profile = key }, label = { Text(if (key == "TODOS") "Todos os perfis" else profileLabel(key)) })
             }
         }
-        filtered.forEachIndexed { index, strategy ->
-            val champion = strategies.filter { it.profile == strategy.profile }.maxByOrNull { it.definitionJson.split('|').getOrNull(6)?.toDoubleOrNull() ?: Double.NEGATIVE_INFINITY }?.id == strategy.id
-            StrategyCard(strategy, index + 1, champion)
+        filtered.groupBy { it.profile }.forEach { entry ->
+            Text(profileLabel(entry.key), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Analytic)
+            entry.value.forEachIndexed { index, strategy ->
+                StrategyCard(strategy, index + 1, index == 0)
+            }
         }
     }
 }
