@@ -28,7 +28,10 @@ object FeatureEngine {
     fun volatility(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
         require(period > 0 && endExclusive in 0..candles.size)
         if (endExclusive <= 1) return 0.0
-        val returns = (maxOf(1, endExclusive - period) until endExclusive).mapNotNull { i ->\n            val previous = candles[i - 1].close\n            if (previous == 0.0) null else (candles[i].close / previous - 1.0).takeIf { it.isFinite() }\n        }
+        val returns = (maxOf(1, endExclusive - period) until endExclusive).mapNotNull { i ->
+            val previous = candles[i - 1].close
+            if (previous == 0.0) null else (candles[i].close / previous - 1.0).takeIf { it.isFinite() }
+        }
         if (returns.size < 2) return 0.0
         val mean = returns.average()
         return sqrt(returns.sumOf { (it - mean) * (it - mean) } / (returns.size - 1))
