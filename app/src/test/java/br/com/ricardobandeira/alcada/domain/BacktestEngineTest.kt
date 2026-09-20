@@ -92,4 +92,10 @@ class BacktestEngineTest {
     fun `saida rejeita stop negativo`() {
         ExitRule(stopLoss = -.01, bars = 1)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `operacao rejeita saida anterior a entrada`() { Trade(2, 1, 1.0, true) }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `operacao rejeita resultado nao finito`() { Trade(1, 2, Double.POSITIVE_INFINITY, true) }
 }
