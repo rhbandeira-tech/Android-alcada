@@ -479,8 +479,11 @@ internal fun strategyScript(strategy: StrategyEntity, data: List<String>, langua
     val converted = rules.map { it to scriptRule(it, language, data.getOrNull(9)) }
     val expressions = converted.mapNotNull { it.second }
     val unsupported = converted.filter { it.second == null }.map { ruleDescription(it.first) }
-    val condition = if (expressions.isEmpty() || unsupported.isNotEmpty()) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
-    val warning = if (unsupported.isEmpty()) "" else "REVISÃO OBRIGATÓRIA - filtros não convertidos: " + unsupported.joinToString(", ") + "\n"
+    val direction = data.getOrNull(9)
+    val invalidDirection = direction !in setOf("CALL", "PUT")
+    val condition = if (expressions.isEmpty() || unsupported.isNotEmpty() || invalidDirection) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
+    val issues = unsupported + if (invalidDirection) listOf("direção ausente ou inválida") else emptyList()
+    val warning = if (issues.isEmpty()) "" else "REVISÃO OBRIGATÓRIA - " + issues.joinToString(", ") + "\n"
     val name = strategy.name.replace("\"", "")
     return when (language) {
         "TradingView" -> "// " + warning + "//@version=5\nstrategy(\"Alçada - " + name + "\", overlay=true)\nsignal = " + condition + "\nplotshape(signal, style=" + if (data.getOrNull(9) == "PUT") "shape.triangledown, location=location.abovebar, color=color.red)" else "shape.triangleup, location=location.belowbar, color=color.lime)" + "\nif signal\n    strategy.entry(\"Alçada\", " + if (data.getOrNull(9) == "PUT") "strategy.short)" else "strategy.long)"
