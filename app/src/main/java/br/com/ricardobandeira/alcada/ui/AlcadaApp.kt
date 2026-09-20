@@ -516,13 +516,23 @@ private fun ruleDescription(encoded: String): String {
 
 @Composable
 private fun HistoryBacktest(backtest: BacktestEntity) {
+    var open by remember { mutableStateOf(false) }
     val data = backtest.metricsJson.split('|')
     val result = data.getOrNull(3)?.toDoubleOrNull()?.let(::number) ?: "—"
     ListItem(
-        headlineContent = { Text("Teste histórico ${marketLabel(backtest.market)}") },
-        supportingContent = { Text("${date(backtest.createdAt)} • ${data.getOrNull(0) ?: 0} operações • resultado $result") },
+        modifier = Modifier.clickable { open = true },
+        headlineContent = { Text("Teste histórico " + marketLabel(backtest.market)) },
+        supportingContent = { Text(date(backtest.createdAt) + " • " + (data.getOrNull(0) ?: "0") + " operações • resultado " + result + "\nToque para interpretar os números") },
         leadingContent = { Icon(Icons.Default.ShowChart, null) },
+        trailingContent = { Icon(Icons.Default.Info, "Explicar resultado", tint = Analytic) },
     )
+    if (open) AlertDialog(onDismissRequest={open=false}, title={Text("Interpretação do teste")}, text={Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
+        Text("Operações: " + (data.getOrNull(0) ?: "—"))
+        Text("Taxa de acerto: " + pct(data.getOrNull(1)))
+        Text("Fator de lucro: " + number(data.getOrNull(2)?.toDoubleOrNull() ?: Double.NaN))
+        Text("Resultado: " + result)
+        Text("Compare taxa de acerto, fator de lucro, resultado esperado e queda máxima em conjunto. Um único número alto não comprova estabilidade.", color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }}, confirmButton={TextButton(onClick={open=false}){Text("Fechar")}})
 }
 
 @Composable private fun Hero(title: String, subtitle: String) {
