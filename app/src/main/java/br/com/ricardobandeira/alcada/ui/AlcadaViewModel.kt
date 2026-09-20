@@ -140,7 +140,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                         else BacktestEngine.forexResult(candles, entries, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
                     val horizon = if (options.market == Market.BINARY_OPTIONS) options.expiration else options.bars
                     val insEntries = signals.filter { it.first + horizon < split }
-                    val oosEntries = signals.filter { it.first > split }
+                    val oosEntries = signals.filter { it.first >= split }
                     val ins = evaluate(insEntries).metrics.netProfit
                     val oos = evaluate(oosEntries).metrics.netProfit
                     val metadata = datasets.value.firstOrNull { it.id == id }
