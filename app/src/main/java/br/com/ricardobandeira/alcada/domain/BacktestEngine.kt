@@ -66,6 +66,7 @@ object BacktestEngine {
         val grossLoss = -trades.filter { it.pnl < 0 }.sumOf { it.pnl }
         var equity = 0.0; var peak = 0.0; var drawdown = 0.0
         trades.forEach { equity += it.pnl; peak = max(peak, equity); drawdown = max(drawdown, peak - equity) }
+        require(trades.zipWithNext().all { (a, b) -> a.entryTime <= b.entryTime }) { "As operações precisam estar em ordem cronológica." }
         val wins = trades.count { it.won }
         return BacktestMetrics(trades.size, wins, if (trades.isEmpty()) 0.0 else wins.toDouble() / trades.size,
             equity, if (grossLoss == 0.0) if (grossProfit > 0) Double.POSITIVE_INFINITY else 0.0 else grossProfit / grossLoss,
