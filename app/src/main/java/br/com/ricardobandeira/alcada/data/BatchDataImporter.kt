@@ -53,6 +53,9 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
                     canonical += normalize(temp, source.name); temp.delete(); csvFiles++
                 } else ignored++
             }.onFailure { issues += ImportIssue(source.name, friendly(it)) }
+            workDir.listFiles { file -> file.name.startsWith("alcada_") && file.name.endsWith(".csv") }
+                ?.filter { it !in canonical }
+                ?.forEach { it.delete() }
         }
         require(canonical.isNotEmpty()) { issues.firstOrNull()?.message ?: "Nenhum CSV válido foi encontrado." }
         val merge = merge(canonical, output); canonical.forEach(File::delete)
