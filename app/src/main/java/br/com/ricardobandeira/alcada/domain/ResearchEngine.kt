@@ -104,7 +104,14 @@ class ResearchEngine {
                     it.trades >= maxOf(3, budget.minimumTrades / 3) && it.expectancy > 0.0 && it.profitFactor > 1.0
                 }
                 val stability = stableFolds / forwardTests.size.toDouble()
-                val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .55 + stability * .35 + sampleFactor * .10).coerceIn(0.0, 1.0)
+                val foldExpectancies = forwardTests.filter { it.trades > 0 }.map { it.expectancy }
+                val regimeDispersion = if (foldExpectancies.size < 2) 1.0 else {
+                    val mean = foldExpectancies.average()
+                    val variance = foldExpectancies.sumOf { (it - mean) * (it - mean) } / foldExpectancies.size
+                    kotlin.math.sqrt(variance) / (kotlin.math.abs(mean) + .05)
+                }
+                val stabilityPenalty = (1.0 / (1.0 + regimeDispersion)).coerceIn(0.0, 1.0)
+                val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .45 + stability * .30 + stabilityPenalty * .15 + sampleFactor * .10).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(java.util.Locale.US, ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", timeframeFactor, direction, listOf(
                         EntryRule("wickBodyRatio", ">=", ratio),
