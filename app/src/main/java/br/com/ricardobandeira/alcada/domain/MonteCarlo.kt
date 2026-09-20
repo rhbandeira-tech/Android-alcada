@@ -21,6 +21,8 @@ object MonteCarlo {
      */
     fun analyze(trades: List<Trade>, simulations: Int = 500, seed: Long = 42, blockSize: Int? = null): MonteCarloSummary {
         require(simulations > 0)
+        require(blockSize == null || blockSize > 0) { "O tamanho do bloco precisa ser positivo." }
+        require(trades.all { it.pnl.isFinite() }) { "As operações precisam ter resultados numéricos válidos." }
         if (trades.isEmpty()) return MonteCarloSummary(simulations, 0.0, 0.0, 0.0, 0.0, 1)
         val block = (blockSize ?: sqrt(trades.size.toDouble()).toInt().coerceIn(2, 12)).coerceIn(1, trades.size)
         val random = Random(seed)
