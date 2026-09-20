@@ -22,8 +22,16 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
         val sources = items.map { (uri, name) ->
             ImportSource(name) { requireNotNull(context.contentResolver.openInputStream(uri)) { "Não foi possível abrir $name" } }
         }
-        val summary = BatchDataImporter(File(context.cacheDir, "importacao")).import(sources, target, onProgress)
-        require(summary.validCandles > 1) { "São necessárias pelo menos duas velas válidas." }
+        val summary = try {
+            BatchDataImporter(File(context.cacheDir, "importacao")).import(sources, target, onProgress)
+        } catch (error: Throwable) {
+            target.delete()
+            throw error
+        }
+        if (summary.validCandles <= 1) {
+            target.delete()
+            throw IllegalArgumentException("São necessárias pelo menos duas velas válidas.")
+        }
         val label = if (items.size == 1) items.first().second else "Importação de ${items.size} arquivos"
         val entity = DatasetEntity(id, label, label.substringBeforeLast('.').uppercase(), "LOCAL", 1,
             requireNotNull(summary.firstEpochMillis), requireNotNull(summary.lastEpochMillis), target.absolutePath,
