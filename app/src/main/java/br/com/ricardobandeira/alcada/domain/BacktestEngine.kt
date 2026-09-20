@@ -8,7 +8,9 @@ object BacktestEngine {
     }
 
     fun binaryResult(candles: List<Candle>, signals: List<Pair<Int, Direction>>, expirationBars: Int, payout: Double): BacktestResult {
-        require(expirationBars > 0 && payout.isFinite() && payout > 0.0)
+        require(expirationBars > 0) { "O vencimento precisa ser positivo." }
+        require(payout.isFinite() && payout >= .01 && payout <= 2.0) { "O retorno precisa ficar entre 1% e 200%." }
+        require(signals.all { it.second == Direction.CALL || it.second == Direction.PUT }) { "Opções binárias aceitam apenas CALL ou PUT." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val trades = signals.mapNotNull { (i, direction) ->
             if (i < 0 || i + expirationBars >= candles.size) null else {
