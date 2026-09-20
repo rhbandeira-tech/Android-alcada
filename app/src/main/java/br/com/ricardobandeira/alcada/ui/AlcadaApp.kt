@@ -495,7 +495,7 @@ private fun scriptRule(encoded: String, language: String, direction: String? = n
             else -> null
         }
     }
-    if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio")) feature + " " + op + " " + value else null
+    if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio")) feature + " " + op + " " + value else null
     val expression = when (feature) {
         "wickBodyRatio" -> "(math.max(high-open, high-close)/math.max(math.abs(close-open),syminfo.mintick))"
         "bodyRangeRatio" -> "(math.abs(close-open)/math.max(high-low,syminfo.mintick))"
