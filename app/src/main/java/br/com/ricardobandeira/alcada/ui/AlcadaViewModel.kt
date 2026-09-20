@@ -127,6 +127,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             _backtestState.value = OperationState(true, .05f, "Carregando dados em blocos…")
             runCatching {
                 val candles = repository.loadCandles(id)
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
                 _backtestState.value = OperationState(true, .35f, "Calculando sinais sem look-ahead…")
                 val result = withContext(Dispatchers.Default) {
                     val direction = if (options.market == Market.BINARY_OPTIONS) options.direction
@@ -159,6 +160,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                     backtest
                 }
                 _backtestState.value = OperationState(true, .85f, "Persistindo resultado…")
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
                 repository.saveBacktest(id, options.market, result)
                 result
             }.onSuccess {
