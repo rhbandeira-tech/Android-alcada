@@ -59,7 +59,8 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
 @Composable private fun Logo(dimension: androidx.compose.ui.unit.Dp) { Canvas(Modifier.size(dimension)) { val p = Path().apply { moveTo(size.width*.08f,size.height*.78f); lineTo(size.width*.35f,size.height*.5f); lineTo(size.width*.54f,size.height*.64f); lineTo(size.width*.9f,size.height*.18f) }; drawPath(p, Positive, style=androidx.compose.ui.graphics.drawscope.Stroke(width=size.width*.12f)); drawLine(Analytic, Offset(size.width*.62f,size.height*.18f), Offset(size.width*.9f,size.height*.18f), size.width*.09f); drawLine(Analytic, Offset(size.width*.9f,size.height*.18f), Offset(size.width*.9f,size.height*.46f), size.width*.09f) } }
 
 @Composable private fun HomeScreen(vm: AlcadaViewModel) {
-    val strategies by vm.strategies.collectAsState(); val backtests by vm.backtests.collectAsState(); val datasets by vm.datasets.collectAsState()
+    val strategies by vm.strategies.collectAsState()
+    val health by vm.deviceHealth.collectAsState(); val backtests by vm.backtests.collectAsState(); val datasets by vm.datasets.collectAsState()
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { Hero("Laboratório quantitativo", "Processamento local • resultados históricos, nunca promessas") }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Metric("${datasets.size}", "conjuntos de dados", Analytic, Modifier.weight(1f)); Metric("${strategies.size}", "estratégias", Positive, Modifier.weight(1f)); Metric("${backtests.size}", "testes", Pending, Modifier.weight(1f)) } }
@@ -97,6 +98,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
                     Text("Orçamento: ${candidates.toInt()} candidatos")
                     Slider(candidates, { candidates = it }, valueRange = 500f..10_000f, steps = 18, enabled = !state.running)
                     if (intensive) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Bateria: ${health.batteryPercent?.let { "$it%" } ?: "—"}${if (health.charging) " • carregando" else ""}", style = MaterialTheme.typography.bodySmall); Text("Temperatura: ${health.thermalLabel}", style = MaterialTheme.typography.bodySmall, color = if (health.thermalLabel == "alto") Negative else MaterialTheme.colorScheme.onSurfaceVariant) }
                         Text("Processadores: ${threads.toInt()} de $processors")
                         Slider(threads, { threads = it }, valueRange = 1f..processors.toFloat(), steps = (processors - 2).coerceAtLeast(0), enabled = !state.running)
                         Text("Memória reservada: ${memoryMb.toInt()} MB")
