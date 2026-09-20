@@ -107,6 +107,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
             }
         }
         item { ActionPanel(state, "Pesquisa local", "${candidates.toInt()} candidatos • validação temporal • busca evolutiva", { vm.runResearch(ResearchOptions(candidates.toInt(), intensive = intensive, threads = if (intensive) threads.toInt() else null, memoryMb = if (intensive) memoryMb.toInt() else null)) }, vm::cancelResearch) }
+        if (state.running) item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (state.paused) Button(onClick = vm::resumeResearch, modifier = Modifier.weight(1f)) { Icon(Icons.Default.PlayArrow, null); Text("Retomar") } else OutlinedButton(onClick = vm::pauseResearch, modifier = Modifier.weight(1f)) { Icon(Icons.Default.Pause, null); Text("Pausar") } } }
         if (!state.running && state.progress >= 1f) item { OutlinedButton(onClick = vm::repeatResearch, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Repetir pesquisa com a mesma configuração") } }
         if(strategies.isNotEmpty()) {
             item { SectionTitle("Descobertas persistidas", "Classificação considera robustez, expectativa e desempenho fora da amostra") }
