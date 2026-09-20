@@ -65,10 +65,11 @@ class CsvCandleReader {
 
     private fun parseTimestamp(value: String): Long? {
         val clean = value.trim().removeSurrounding("\"")
-        if (clean.startsWith("@")) return clean.removePrefix("@").toLongOrNull()
+        if (clean.startsWith("@")) return clean.removePrefix("@").toLongOrNull()?.takeIf { it >= 0 }
         clean.toLongOrNull()?.let { numeric ->
             // Accept both Unix seconds and milliseconds.
-            return if (kotlin.math.abs(numeric) < 100_000_000_000L) numeric * 1_000L else numeric
+            if (numeric < 0) return null
+            return if (numeric < 100_000_000_000L) numeric * 1_000L else numeric
         }
         return runCatching { Instant.parse(clean).toEpochMilli() }.getOrNull()
             ?: runCatching { OffsetDateTime.parse(clean).toInstant().toEpochMilli() }.getOrNull()
