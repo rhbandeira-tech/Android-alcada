@@ -3,6 +3,7 @@ package br.com.ricardobandeira.alcada.domain
 /** Produces entries from information available at, or before, each candle. */
 object SignalEngine {
     fun wickSignals(candles: List<Candle>, direction: Direction, minimumRatio: Double = 1.5, limit: Int = 20_000): List<Pair<Int, Direction>> {
+        require(direction in listOf(Direction.CALL, Direction.PUT, Direction.LONG, Direction.SHORT)) { "Direção de sinal inválida." }
         require(minimumRatio.isFinite() && minimumRatio >= 0.0)
         require(limit > 0)
         if (candles.size < 3) return emptyList()
@@ -22,6 +23,7 @@ object SignalEngine {
         minimumDirectionalClose: Double = .60,
         limit: Int = 20_000
     ): List<Pair<Int, Direction>> {
+        require(direction in listOf(Direction.CALL, Direction.PUT, Direction.LONG, Direction.SHORT)) { "Direção de sinal inválida." }
         require(minimumWickBodyRatio.isFinite() && minimumWickBodyRatio >= 0.0)
         require(maximumBodyRangeRatio.isFinite() && maximumBodyRangeRatio in 0.0..1.0)
         require(minimumDirectionalClose.isFinite() && minimumDirectionalClose in .5..1.0)
