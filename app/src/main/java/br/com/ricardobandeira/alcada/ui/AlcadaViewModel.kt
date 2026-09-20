@@ -209,8 +209,9 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                     dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget;payout=${options.payout}"))
                     if (progress.finished) repository.saveResearchLeaders(runId, datasetId, progress.leaders)
                 }
-            }.onSuccess { _researchState.value = OperationState(progress = 1f, message = "Pesquisa concluída") }
+            }.onSuccess { researchJob = null; _researchState.value = OperationState(progress = 1f, message = "Pesquisa concluída") }
                 .onFailure { error ->
+                    researchJob = null
                     val cancelled = error is kotlinx.coroutines.CancellationException
                     withContext(NonCancellable) { dao.saveRun(ResearchRunEntity(runId, started, System.currentTimeMillis(), if (cancelled) "CANCELLED" else "FAILED", (_researchState.value.progress * 100).toInt(), 42, "budget=$budget;payout=${options.payout}")) }
                     _researchState.value = OperationState(message = if (cancelled) "Pesquisa cancelada" else null, error = if (cancelled) null else friendlyError(error))
