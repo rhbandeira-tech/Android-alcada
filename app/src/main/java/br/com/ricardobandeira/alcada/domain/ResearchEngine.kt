@@ -93,7 +93,7 @@ class ResearchEngine {
                         EntryRule("wickBodyRatio", ">=", ratio),
                         EntryRule("bodyRangeRatio", "<=", bodyLimit),
                         EntryRule("closeLocation", if (direction == Direction.CALL) ">=" else "<=", if (direction == Direction.CALL) closeLocation else 1.0 - closeLocation)
-                    ) + listOfNotNull(maxSpreadRatio?.let { EntryRule("spreadRangeRatio", "<=", it) }), ExitRule(bars = expiration), budget.seed)
+                    ) + listOfNotNull(maxSpreadRatio?.let { EntryRule("spreadRangeRatio", "<=", it) }) + listOfNotNull(if (sessionGate in 1..3) EntryRule("sessionUtc", "==", sessionGate.toDouble()) else null), ExitRule(bars = expiration), budget.seed)
                 val result = EvaluatedStrategy(
                     strategy = strategy,
                     metrics = ins,
