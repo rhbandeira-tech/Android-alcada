@@ -30,6 +30,8 @@ jobs:
             "build-tools;35.0.0"
       - name: Unit tests
         run: gradle testDebugUnitTest --stacktrace
+      - name: Android lint
+        run: gradle lintDebug --stacktrace
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
       - name: Verify APK exists and is non-empty
