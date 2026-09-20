@@ -321,7 +321,31 @@ private fun BarChart(title: String, values: List<Bucket>) {
 
 @Composable
 private fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(title, fontWeight = FontWeight.Bold); content() } }
+    var open by remember { mutableStateOf(false) }
+    Card(onClick = { open = true }) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(title, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.Info, contentDescription = "Explicar gráfico", tint = Analytic)
+            }
+            content()
+            Text("Toque para entender e configurar no gráfico", style = MaterialTheme.typography.labelSmall, color = Analytic)
+        }
+    }
+    if (open) AlertDialog(onDismissRequest = { open = false }, title = { Text(title) }, text = { Text(chartExplanation(title)) }, confirmButton = { TextButton(onClick = { open = false }) { Text("Entendi") } })
+}
+
+private fun chartExplanation(title: String): String = when {
+    title.contains("Evolução") -> "Mostra o resultado acumulado operação a operação. Procure crescimento consistente, não apenas saltos isolados. Para reproduzir, use o ativo e período da estratégia e aplique exatamente suas regras de entrada e saída."
+    title.contains("Queda") -> "Mede a perda desde um pico anterior. Quanto menor e mais controlada, melhor a estabilidade histórica. Use esta medida para dimensionar risco."
+    title.contains("Taxa de acerto") -> "Mostra como a taxa de acerto muda no tempo. Quedas prolongadas podem indicar mudança de regime. Configure o mesmo período, direção, filtros e expiração ou saída do teste."
+    title.contains("Distribuição") -> "Mostra como os resultados das operações se distribuem. Ajuda a identificar dependência de poucas operações excepcionais."
+    title.contains("horário") -> "Compara o resultado por hora UTC. Converta o horário da plataforma para UTC antes de aplicar um filtro de sessão."
+    title.contains("dia × hora") -> "Combina dia e hora. Valores positivos marcam janelas historicamente melhores e negativos janelas piores. Use como filtro estatístico, não como garantia."
+    title.contains("Dentro") -> "Compara dados usados no desenvolvimento com dados posteriores não usados na criação. Menor deterioração fora da amostra é evidência de maior estabilidade."
+    title.contains("expiração") -> "Compara período gráfico e expiração. Configure ambos exatamente como indicados na estratégia."
+    title.contains("pavio") -> "Relaciona proporção do pavio e movimento posterior. Use a razão indicada como condição de entrada junto aos demais filtros."
+    else -> "Este painel resume evidência histórica. As estratégias detalham ativo, período gráfico, direção, filtros e parâmetros para reprodução."
 }
 
 @Composable
