@@ -6,6 +6,7 @@ object SignalEngine {
         require(direction in listOf(Direction.CALL, Direction.PUT, Direction.LONG, Direction.SHORT)) { "Direção de sinal inválida." }
         require(minimumRatio.isFinite() && minimumRatio >= 0.0)
         require(limit > 0)
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         if (candles.size < 3) return emptyList()
         return (1 until candles.lastIndex).asSequence().filter { index ->
             val feature = FeatureEngine.candle(candles[index], candles[index - 1], candles.getOrNull(index - 2))
@@ -28,6 +29,7 @@ object SignalEngine {
         require(maximumBodyRangeRatio.isFinite() && maximumBodyRangeRatio in 0.0..1.0)
         require(minimumDirectionalClose.isFinite() && minimumDirectionalClose in .5..1.0)
         require(limit > 0)
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         if (candles.size < 3) return emptyList()
         return (1 until candles.lastIndex).asSequence().filter { index ->
             val feature = FeatureEngine.candle(candles[index], candles[index - 1])
