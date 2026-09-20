@@ -32,10 +32,11 @@ class StrategyScriptExportTest {
     }
 
     @Test fun sessionUtcUsesCategoricalSessionId() {
-        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+        listOf("TradingView", "Lua").forEach { language ->
             assertNotNull("$language must convert UTC session id", scriptRule("sessionUtc:==:1.0", language, "CALL"))
             assertNull("$language must reject non-session threshold", scriptRule("sessionUtc:==:0.5", language, "CALL"))
         }
+        assertNull("MQL5 broker time is not guaranteed UTC", scriptRule("sessionUtc:==:1.0", "MQL5", "CALL"))
     }
 
     @Test fun spreadRuleStaysBlockedWithoutPlatformSpreadInput() {
@@ -50,6 +51,29 @@ class StrategyScriptExportTest {
         }
         assertNotNull(scriptRule("sessionUtc:==:1.0", "TradingView", "CALL"))
         assertNull(scriptRule("spreadRangeRatio:>=:0.1", "TradingView", "CALL"))
+    }
+
+    @Test fun mql5ExportNeverPlacesLiveOrders() {
+        val strategy = StrategyEntity(
+            id="test-mql5", researchRunId="run", name="Safe", market="BINARY_OPTIONS",
+            symbol="EURUSD", profile="EXPERIMENTAL", definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
+        val script = strategyScript(strategy, data, "MQL5")
+        assertFalse(script.contains("CTrade"))
+        assertFalse(script.contains("trade.Buy"))
+        assertFalse(script.contains("trade.Sell"))
+        assertTrue(script.contains("Alert("))
+    }
+
+    @Test fun exportedWickAndAtrMathMatchesDomainDefinition() {
+        val pineWick = scriptRule("wickBodyRatio:>=:2.0", "TradingView", "CALL")!!
+        assertTrue(pineWick.contains("high-math.max(open,close)"))
+        assertTrue(pineWick.contains("math.min(open,close)-low"))
+        val pineAtr = scriptRule("atrRangeRatio:>=:1.0", "TradingView", "CALL")!!
+        assertTrue(pineAtr.contains("ta.sma(ta.tr(true),14)"))
+        assertFalse(pineAtr.contains("ta.atr"))
     }
 
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
