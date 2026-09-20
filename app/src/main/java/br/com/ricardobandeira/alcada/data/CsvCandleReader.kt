@@ -41,7 +41,7 @@ class CsvCandleReader {
                     }
 
                     chunk += Candle(
-                        timestamp = timestamp,
+                        epochMillis = timestamp,
                         open = open,
                         high = high,
                         low = low,
