@@ -103,7 +103,8 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     }
 
     suspend fun saveResearchLeaders(runId: String, datasetId: String, results: List<EvaluatedStrategy>) {
-        results.groupBy(::profile).forEach { (_, candidates) ->
+        val unique = results.distinctBy { it.strategy.id }
+        unique.groupBy(::profile).forEach { (_, candidates) ->
             candidates.sortedByDescending(::researchScore).take(3).forEach { saveResearch(runId, datasetId, it) }
         }
     }
