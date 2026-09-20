@@ -257,10 +257,15 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 Text("Fora ${pct(data.getOrNull(2))}")
                 Text("Fator de lucro $profitFactor")
             }
+            Text("Operações ${data.getOrNull(0) ?: "—"} • Resultado esperado ${number(data.getOrNull(4)?.toDoubleOrNull() ?: Double.NaN)} • Queda máxima ${number(data.getOrNull(5)?.toDoubleOrNull() ?: Double.NaN)}")
+            if (data.size > 11) {
+                Text("${directionLabel(data.getOrNull(9))} • ${data.getOrNull(10) ?: "—"} min • expiração ${data.getOrNull(11) ?: "—"} vela(s)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Text(
                 "Robustez ${pct(data.getOrNull(6))} • ${validationLabel(data.getOrNull(7))}",
                 color = if (data.getOrNull(8) == "true") Negative else Positive,
             )
+            if (data.getOrNull(8) == "true") Text("Alerta: sinais de fragilidade ou sobreajuste.", color = Negative)
         }
     }
 }
