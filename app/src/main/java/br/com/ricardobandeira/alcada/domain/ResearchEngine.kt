@@ -79,9 +79,19 @@ class ResearchEngine {
                         EntryRule("bodyRangeRatio", "<=", bodyLimit),
                         EntryRule("closeLocation", if (direction == Direction.CALL) ">=" else "<=", if (direction == Direction.CALL) closeLocation else 1.0 - closeLocation)
                     ), ExitRule(bars = expiration), budget.seed)
-                val result = EvaluatedStrategy(strategy, ins, oos.winRate, robustness,
-                    if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
-                    gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5)
+                val result = EvaluatedStrategy(
+                    strategy = strategy,
+                    metrics = ins,
+                    oosWinRate = oos.winRate,
+                    robustness = robustness,
+                    status = if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
+                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5,
+                    oosTrades = oos.trades,
+                    oosExpectancy = oos.expectancy,
+                    oosProfitFactor = oos.profitFactor,
+                    stableForwardFolds = stableFolds,
+                    forwardFolds = forwardTests.size
+                )
                 val score = { e: EvaluatedStrategy -> e.robustness * .5 + e.metrics.expectancy.coerceIn(-1.0, 1.0) * .3 - e.metrics.maxDrawdown * .02 }
                 if (best == null || score(result) > score(best!!)) best = result
                 elite += result
