@@ -104,4 +104,19 @@ class FeatureEngineTest {
         assertEquals(9, FeatureEngine.sessionHour(epoch))
         assertEquals("Europa", FeatureEngine.sessionLabel(epoch))
     }
+
+    @Test
+    fun `agregacao preserva OHLC volume e spread`() {
+        val candles = listOf(
+            Candle(1, 10.0, 12.0, 9.0, 11.0, 2.0, 0.2),
+            Candle(2, 11.0, 13.0, 10.0, 12.0, 3.0, 0.4)
+        )
+        val result = FeatureEngine.aggregate(candles, 2).single()
+        assertEquals(10.0, result.open, 1e-9)
+        assertEquals(13.0, result.high, 1e-9)
+        assertEquals(9.0, result.low, 1e-9)
+        assertEquals(12.0, result.close, 1e-9)
+        assertEquals(5.0, result.volume, 1e-9)
+        assertEquals(0.3, result.spread, 1e-9)
+    }
 }
