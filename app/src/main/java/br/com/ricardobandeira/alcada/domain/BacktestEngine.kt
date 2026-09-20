@@ -9,6 +9,7 @@ object BacktestEngine {
 
     fun binaryResult(candles: List<Candle>, signals: List<Pair<Int, Direction>>, expirationBars: Int, payout: Double): BacktestResult {
         require(expirationBars > 0 && payout > 0.0)
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val trades = signals.mapNotNull { (i, direction) ->
             if (i < 0 || i + expirationBars >= candles.size) null else {
                 val delta = candles[i + expirationBars].close - candles[i].close
@@ -24,6 +25,12 @@ object BacktestEngine {
     }
 
     fun forexResult(candles: List<Candle>, entries: List<Pair<Int, Direction>>, exit: ExitRule, cost: Double): BacktestResult {
+        require(cost >= 0.0) { "O custo por operação não pode ser negativo." }
+        require(exit.bars == null || exit.bars > 0) { "O limite de velas da saída precisa ser positivo." }
+        require(exit.stopLoss == null || exit.stopLoss > 0.0) { "O stop loss precisa ser positivo." }
+        require(exit.takeProfit == null || exit.takeProfit > 0.0) { "O take profit precisa ser positivo." }
+        require(exit.trailingStop == null || exit.trailingStop > 0.0) { "O trailing stop precisa ser positivo." }
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val trades = entries.mapNotNull { (index, direction) ->
             if (index !in 0 until candles.lastIndex || direction !in listOf(Direction.LONG, Direction.SHORT)) return@mapNotNull null
             val entry = candles[index].close
