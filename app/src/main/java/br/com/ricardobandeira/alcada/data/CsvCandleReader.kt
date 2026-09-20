@@ -91,6 +91,10 @@ interface HistoricalDataProvider {
 
 /** Integration boundary. A production endpoint/client must be explicitly configured; no undocumented API is assumed. */
 class DukascopyDataProvider : HistoricalDataProvider {
-    override suspend fun download(symbol: String, fromEpochMillis: Long, toEpochMillis: Long, timeframeMinutes: Int): Sequence<List<Candle>> =
+    override suspend fun download(symbol: String, fromEpochMillis: Long, toEpochMillis: Long, timeframeMinutes: Int): Sequence<List<Candle>> {
+        require(symbol.isNotBlank()) { "Informe um ativo para baixar o histórico." }
+        require(fromEpochMillis >= 0 && toEpochMillis >= fromEpochMillis) { "O intervalo do histórico é inválido." }
+        require(timeframeMinutes > 0) { "O período gráfico precisa ser positivo." }
         throw UnsupportedOperationException("Configure um cliente Dukascopy confiável para habilitar downloads")
+    }
 }
