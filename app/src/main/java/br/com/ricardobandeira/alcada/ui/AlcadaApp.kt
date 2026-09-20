@@ -162,7 +162,13 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                     Text("Comparação rápida", fontWeight = FontWeight.Bold)
                     Text("1º ${filtered[0].name} × 2º ${filtered[1].name}", style = MaterialTheme.typography.bodySmall)
                     Text("$label: ${number(score(first))} × ${number(score(second))} • diferença ${number(delta)}", style = MaterialTheme.typography.bodySmall, color = Analytic)
-                    Text("Compare também queda máxima, evidência fora da amostra e estabilidade temporal antes de interpretar a liderança.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    HorizontalDivider()
+                    Text("Robustez ${pct(first.getOrNull(6))} × ${pct(second.getOrNull(6))}", style = MaterialTheme.typography.bodySmall)
+                    Text("Fora da amostra ${pct(first.getOrNull(2))} × ${pct(second.getOrNull(2))}", style = MaterialTheme.typography.bodySmall)
+                    Text("Fator de lucro ${number(first.getOrNull(3)?.toDoubleOrNull() ?: Double.NaN)} × ${number(second.getOrNull(3)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
+                    Text("Resultado esperado ${number(first.getOrNull(4)?.toDoubleOrNull() ?: Double.NaN)} × ${number(second.getOrNull(4)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
+                    Text("Queda máxima ${number(first.getOrNull(5)?.toDoubleOrNull() ?: Double.NaN)} × ${number(second.getOrNull(5)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
+                    Text("A ordem segue o critério selecionado; as demais linhas servem para enxergar os trade-offs entre desempenho e risco.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
