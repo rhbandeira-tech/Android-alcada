@@ -9,7 +9,7 @@ import java.time.ZonedDateTime
 /** Reads lazily in bounded chunks. Expected columns: timestamp,open,high,low,close[,volume,spread]. */
 class CsvCandleReader {
     fun chunks(input: InputStream, chunkSize: Int = 4_096): Sequence<List<Candle>> = sequence {
-        require(chunkSize > 0)
+        require(chunkSize in 1..65_536) { "O tamanho do bloco deve ficar entre 1 e 65.536 linhas." }
         input.bufferedReader().use { reader ->
             val first = reader.readLine() ?: return@use
             val delimiter = detectDelimiter(first)
