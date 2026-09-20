@@ -208,6 +208,29 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                 }
             }
         }
+        if (filtered.isNotEmpty()) {
+            val parsed = filtered.map { strategy -> strategy to strategy.definitionJson.split('|') }
+            val positiveOos = parsed.count { (_, d) -> (d.getOrNull(2)?.toDoubleOrNull() ?: Double.NEGATIVE_INFINITY) > 0.0 }
+            val profitable = parsed.count { (_, d) -> (d.getOrNull(3)?.toDoubleOrNull() ?: 0.0) > 1.0 }
+            val positiveExpected = parsed.count { (_, d) -> (d.getOrNull(4)?.toDoubleOrNull() ?: Double.NEGATIVE_INFINITY) > 0.0 }
+            val robust = parsed.count { (_, d) -> (d.getOrNull(6)?.toDoubleOrNull() ?: 0.0) >= .70 }
+            val complete = parsed.count { (_, d) -> listOf(2, 3, 4, 5, 6).all { index -> d.getOrNull(index)?.toDoubleOrNull()?.isFinite() == true } }
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f))) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("Auditoria do ranking • 10 sinais", fontWeight = FontWeight.Bold)
+                    Text("1 • Universo: ${filtered.size} estratégias no filtro atual.", style = MaterialTheme.typography.bodySmall)
+                    Text("2 • Perfis presentes: ${filtered.map { it.profile }.distinct().size}.", style = MaterialTheme.typography.bodySmall)
+                    Text("3 • OOS positivo: $positiveOos de ${filtered.size}.", style = MaterialTheme.typography.bodySmall)
+                    Text("4 • Fator de lucro > 1: $profitable de ${filtered.size}.", style = MaterialTheme.typography.bodySmall)
+                    Text("5 • Resultado esperado positivo: $positiveExpected de ${filtered.size}.", style = MaterialTheme.typography.bodySmall)
+                    Text("6 • Robustez ≥ 70%: $robust de ${filtered.size}.", style = MaterialTheme.typography.bodySmall)
+                    Text("7 • Métricas completas: $complete de ${filtered.size}.", style = MaterialTheme.typography.bodySmall)
+                    Text("8 • Ordenação ativa: " + when (sort) { "FORA" -> "fora da amostra"; "FATOR" -> "fator de lucro"; "RESULTADO" -> "resultado esperado"; else -> "robustez" } + ".", style = MaterialTheme.typography.bodySmall)
+                    Text("9 • Campeão significa líder no critério selecionado, não garantia de superioridade futura.", style = MaterialTheme.typography.labelSmall, color = Pending)
+                    Text("10 • Confirmação: compare OOS, fator, expectativa, drawdown e robustez antes de implementar.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         filtered.groupBy { it.profile }.entries.sortedBy { profileOrder.indexOf(it.key).let { index -> if (index < 0) Int.MAX_VALUE else index } }.forEach { entry ->
             val profileItems = entry.value
             Text(profileLabel(entry.key), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Analytic)
