@@ -59,6 +59,7 @@ object BacktestEngine {
     }
 
     fun metrics(trades: List<Trade>, breakEven: Double? = null): BacktestMetrics {
+        require(breakEven == null || (breakEven.isFinite() && breakEven in 0.0..1.0)) { "A taxa de equilíbrio precisa ficar entre 0% e 100%." }
         val grossProfit = trades.filter { it.pnl > 0 }.sumOf { it.pnl }
         val grossLoss = -trades.filter { it.pnl < 0 }.sumOf { it.pnl }
         var equity = 0.0; var peak = 0.0; var drawdown = 0.0
