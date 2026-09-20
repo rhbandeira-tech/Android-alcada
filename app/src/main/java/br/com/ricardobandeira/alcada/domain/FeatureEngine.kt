@@ -17,7 +17,7 @@ object FeatureEngine {
     }
 
     fun atr(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
-        require(period > 0 && endExclusive in 0..candles.size)
+        require(period > 0 && endExclusive in 0..candles.size) { "Período ou janela de ATR inválidos." }
         val start = maxOf(1, endExclusive - period)
         if (endExclusive <= 1) return 0.0
         return (start until endExclusive).map { i ->
