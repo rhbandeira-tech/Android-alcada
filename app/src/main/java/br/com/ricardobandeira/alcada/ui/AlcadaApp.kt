@@ -505,6 +505,7 @@ private fun StrategyCard(strategy: StrategyEntity, rank: Int? = null, champion: 
 @Composable
 private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) {
     var format by remember { mutableStateOf<String?>(null) }
+    var copiedLanguage by remember { mutableStateOf<String?>(null) }
     val clipboard = LocalClipboardManager.current
     Text("Exportar estratégia", fontWeight = FontWeight.SemiBold)
     Text("Gere uma base de implementação e copie para sua plataforma. Regras não convertidas ficam bloqueadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -521,7 +522,15 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
                 if (script.contains("REVISÃO OBRIGATÓRIA")) Text("Código bloqueado para entrada automática: alguns filtros ainda precisam de conversão específica para esta linguagem.", color = Negative, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) { Text(script, Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall) }
             }
-        }, confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(script)); format = null }) { Text("Copiar script") } }, dismissButton = { TextButton(onClick = { format = null }) { Text("Fechar") } })
+        }, confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(script)); copiedLanguage = language; format = null }) { Text("Copiar script") } }, dismissButton = { TextButton(onClick = { format = null }) { Text("Fechar") } })
+    }
+    copiedLanguage?.let { language ->
+        Surface(color = Positive.copy(alpha = .12f), shape = RoundedCornerShape(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Script $language copiado para a área de transferência.", style = MaterialTheme.typography.bodySmall, color = Positive, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = { copiedLanguage = null }) { Text("OK") }
+            }
+        }
     }
 }
 
