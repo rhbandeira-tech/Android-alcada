@@ -474,7 +474,7 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
     }
 }
 
-private fun strategyScript(strategy: StrategyEntity, data: List<String>, language: String): String {
+internal fun strategyScript(strategy: StrategyEntity, data: List<String>, language: String): String {
     val rules = data.getOrNull(12)?.split('&')?.filter { it.isNotBlank() }.orEmpty()
     val converted = rules.map { it to scriptRule(it, language, data.getOrNull(9)) }
     val expressions = converted.mapNotNull { it.second }
@@ -489,7 +489,7 @@ private fun strategyScript(strategy: StrategyEntity, data: List<String>, languag
     }
 }
 
-private fun scriptRule(encoded: String, language: String, direction: String? = null): String? {
+internal fun scriptRule(encoded: String, language: String, direction: String? = null): String? {
     val p = encoded.split(':')
     val feature = p.getOrNull(0) ?: return null
     val op = p.getOrNull(1) ?: return null
