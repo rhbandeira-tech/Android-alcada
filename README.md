@@ -6,9 +6,9 @@ Alçada é um laboratório mobile, não um robô de execução de ordens. Todo c
 
 ## Estado funcional
 
-- Aplicativo Kotlin/Compose Material 3 com identidade grafite, logo vetorial/adaptive icon e navegação simplificada em Início, Analisar, Backtest e Mais.
+- Aplicativo Kotlin/Compose Material 3 com identidade grafite, logo vetorial/adaptive icon e navegação simplificada em Início, Analisar, Testar e Mais.
 - Fluxo Android completo de seleção e importação de CSV, cópia privada, validação em chunks, metadados Room e seleção do dataset em pesquisa/backtest.
-- ViewModel conecta UI, Room e motores fora da main thread, com loading, progresso, erro, vazio e cancelamento cooperativo.
+- ViewModel conecta interface, Room e motores fora da thread principal, com carregamento, progresso, erro, estado vazio e cancelamento cooperativo.
 - Domínio independente do Android para candles, features, regras serializáveis, opções binárias e Forex (SL, TP, trailing, saída temporal, spread/custo).
 - Pesquisa evolucionária determinística por seed e em `Flow`: gera e avalia candidatos de forma incremental, poda por requisitos mínimos e mantém somente o melhor, sem materializar o espaço combinatório.
 - Features iniciais: geometria OHLC, corpo, pavios, razões pavio/corpo e pavio/range, range, ATR, volatilidade, gap e momentum. O limite temporal exclusivo das janelas evita leitura do futuro.
@@ -27,7 +27,7 @@ data/     Room, CSV e contratos de provedores externos
 work/     manutenção persistente do cache local
 ```
 
-A estratégia contém mercado, ativo, timeframe, direção, regras de entrada, regra de saída e seed. Resultados distinguem win rate, expectativa, profit factor, drawdown, break-even e robustez OOS. O ranking planejado por perfil pondera robustez e risco; jamais deve ordenar somente pela taxa de acerto.
+A estratégia contém mercado, ativo, timeframe, direção, regras de entrada, regra de saída e seed. Resultados distinguem taxa de acerto, expectativa, fator de lucro, queda máxima, equilíbrio e robustez fora da amostra. O ranking planejado por perfil pondera robustez e risco; jamais deve ordenar somente pela taxa de acerto.
 
 ## Dados e reprodução
 
@@ -43,6 +43,7 @@ Requisitos: Android SDK 35 e JDK 17.
 
 ```bash
 gradle testDebugUnitTest
+gradle lintDebug
 gradle assembleDebug
 ```
 
@@ -52,5 +53,5 @@ O APK sai em `app/build/outputs/apk/debug/app-debug.apk`. O repositório não ve
 
 - Cliente Dukascopy escolhido/configurado pelo responsável pelo produto e provider de calendário econômico confiável.
 - Foreground WorkManager para pesquisas que precisem sobreviver ao encerramento forçado do processo; a execução atual é cancelável e preservada enquanto o processo está ativo.
-- Walk-forward e Monte Carlo aprofundados, além da divisão temporal IS/OOS já executada pelo motor local.
-- Instrumentação de bateria/thermal status e benchmark em aparelhos representativos para calibrar automaticamente threads e memória.
+- Validação temporal e Monte Carlo podem continuar recebendo refinamentos estatísticos; a versão atual já executa divisão dentro/fora da amostra, folds temporais e bootstrap em blocos.
+- Benchmark em aparelhos representativos para refinar a calibração automática; a interface atual já acompanha bateria, carregamento e estado térmico.
