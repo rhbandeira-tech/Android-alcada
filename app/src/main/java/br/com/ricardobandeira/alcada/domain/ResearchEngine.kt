@@ -34,6 +34,7 @@ class ResearchEngine {
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
         val evaluationSlots = Semaphore(workerCount)
+        val progressStride = maxOf(25, effectiveBatch)
         suspend fun evaluateBacktests(
             source: List<Candle>,
             insSignals: List<Pair<Int, Direction>>,
@@ -178,7 +179,7 @@ class ResearchEngine {
                 elite.sortByDescending(score)
                 if (elite.size > 24) elite.removeAt(elite.lastIndex)
             }
-            if (n % maxOf(25, effectiveBatch) == 0) emit(ResearchProgress(n + 1, accepted, best, elite.toList()))
+            if (n % progressStride == 0) emit(ResearchProgress(n + 1, accepted, best, elite.toList()))
         }
         emit(ResearchProgress(budget.maxCandidates, accepted, best, elite.toList(), true))
     }.flowOn(Dispatchers.Default)
