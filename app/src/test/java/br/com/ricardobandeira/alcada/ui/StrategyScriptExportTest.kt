@@ -155,7 +155,7 @@ class StrategyScriptExportTest {
 
     @Test fun strategyNameCannotInjectLinesIntoGeneratedScript() {
         val strategy = StrategyEntity(
-            id="test-name", researchRunId="run", name="Safe\\nInjected\\t\\\"Name",
+            id="test-name", researchRunId="run", name="Safe" + 10.toChar() + "Injected" + 9.toChar() + 34.toChar() + "Name",
             market="BINARY_OPTIONS", symbol="EURUSD", profile="EXPERIMENTAL",
             definitionJson="", createdAt=0L
         )
