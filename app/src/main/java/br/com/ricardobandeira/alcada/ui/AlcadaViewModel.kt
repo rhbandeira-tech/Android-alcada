@@ -214,7 +214,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun validateBacktest(options: BacktestOptions): String? = when {
         options.market == Market.BINARY_OPTIONS && options.expiration <= 0 -> "A expiração precisa ser maior que zero."
-        options.market == Market.BINARY_OPTIONS && (!options.payout.isFinite() || options.payout <= 0.0) -> "O payout precisa ser maior que zero."
+        options.market == Market.BINARY_OPTIONS && (!options.payout.isFinite() || options.payout < .01 || options.payout > 2.0) -> "O retorno precisa ficar entre 1% e 200%."
         options.market != Market.BINARY_OPTIONS && (!options.stopLoss.isFinite() || options.stopLoss <= 0.0) -> "O stop loss precisa ser maior que zero."
         options.market != Market.BINARY_OPTIONS && (!options.takeProfit.isFinite() || options.takeProfit <= 0.0) -> "O take profit precisa ser maior que zero."
         options.market != Market.BINARY_OPTIONS && (!options.trailing.isFinite() || options.trailing <= 0.0) -> "O trailing stop precisa ser maior que zero."
