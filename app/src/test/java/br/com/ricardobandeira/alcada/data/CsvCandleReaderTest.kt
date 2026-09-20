@@ -15,7 +15,7 @@ class CsvCandleReaderTest {
     @Test fun `accepts ISO 8601 timestamp with offset`() {
         val csv = "timestamp,open,high,low,close\n2006-01-02T00:00:00+00:00,10,12,9,11\n"
         val candle = CsvCandleReader().chunks(csv.byteInputStream()).single().single()
-        assertEquals(Instant.parse("2006-01-02T00:00:00Z").toEpochMilli(), candle.timestamp)
+        assertEquals(Instant.parse("2006-01-02T00:00:00Z").toEpochMilli(), candle.epochMillis)
     }
 
     @Test fun `accepts semicolon delimiter`() {
