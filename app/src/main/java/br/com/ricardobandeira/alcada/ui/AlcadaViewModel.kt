@@ -53,7 +53,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     private var importJob: Job? = null
     private var researchJob: Job? = null
     private var lastResearchOptions: ResearchOptions? = null
-    private var researchPaused = false
+    private val researchPaused = MutableStateFlow(false)
     private var backtestJob: Job? = null
     private fun readDeviceHealth(): DeviceHealth {
         val app = getApplication<Application>()
@@ -193,7 +193,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         val budget = options.candidates
         val datasetId = _selectedDataset.value ?: return failResearch("Selecione um conjunto de dados")
         researchJob?.cancel()
-        researchPaused = false
+        researchPaused.value = false
         researchJob = viewModelScope.launch {
             val runId = UUID.randomUUID().toString(); val started = System.currentTimeMillis()
             val dao = (getApplication<Application>() as AlcadaApplication).database.dao()
@@ -203,7 +203,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 val candles = repository.loadCandles(datasetId)
                 require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas válidas." }
                 ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = options.threads ?: if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = options.memoryMb ?: if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50))), payout = options.payout) {
-                    while (researchPaused) { kotlinx.coroutines.delay(150); kotlinx.coroutines.currentCoroutineContext().job.ensureActive() }
+                    while (researchPaused.value) { kotlinx.coroutines.delay(150); kotlinx.coroutines.currentCoroutineContext().job.ensureActive() }
                 }.collect { progress ->
                     val ratio = (progress.evaluated.toFloat() / budget).coerceIn(0f, 1f)
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
@@ -231,9 +231,9 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         else -> null
     }
 
-    fun pauseResearch() { if (researchJob?.isActive == true) { researchPaused = true; _researchState.value = _researchState.value.copy(paused = true, message = "Pesquisa pausada") } }
-    fun resumeResearch() { if (researchJob?.isActive == true) { researchPaused = false; _researchState.value = _researchState.value.copy(paused = false, message = "Pesquisa retomada") } }
-    fun cancelResearch() { researchPaused = false; researchJob?.cancel(); researchJob = null }
+    fun pauseResearch() { if (researchJob?.isActive == true) { researchPaused.value = true; _researchState.value = _researchState.value.copy(paused = true, message = "Pesquisa pausada") } }
+    fun resumeResearch() { if (researchJob?.isActive == true) { researchPaused.value = false; _researchState.value = _researchState.value.copy(paused = false, message = "Pesquisa retomada") } }
+    fun cancelResearch() { researchPaused.value = false; researchJob?.cancel(); researchJob = null }
     fun repeatResearch() { lastResearchOptions?.let(::runResearch) ?: failResearch("Inicie uma pesquisa antes de tentar repeti-la.") }
     fun cancelBacktest() { backtestJob?.cancel(); backtestJob = null }
     private fun failResearch(message: String) { _researchState.value = OperationState(error = message) }
