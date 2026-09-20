@@ -43,4 +43,19 @@ class FeatureEngineTest {
     fun `vela rejeita spread negativo`() {
         Candle(0, 10.0, 11.0, 9.0, 10.0, spread = -0.1)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `atr rejeita limite negativo`() {
+        FeatureEngine.atr(emptyList(), 14, -1)
+    }
+
+    @Test
+    fun `volatilidade ignora retorno com preco anterior zero`() {
+        val candles = listOf(
+            Candle(1, 0.0, 0.0, 0.0, 0.0),
+            Candle(2, 1.0, 1.0, 1.0, 1.0),
+            Candle(3, 1.0, 1.0, 1.0, 1.0)
+        )
+        assertEquals(0.0, FeatureEngine.volatility(candles, 3), 1e-12)
+    }
 }
