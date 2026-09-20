@@ -406,14 +406,20 @@ private fun BarChart(title: String, values: List<Bucket>) {
 @Composable
 private fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     var open by remember { mutableStateOf(false) }
-    Card(onClick = { open = true }) {
+    Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(title, fontWeight = FontWeight.Bold)
-                Icon(Icons.Default.Info, contentDescription = "Explicar gráfico", tint = Analytic)
+                IconButton(onClick = { open = true }) {
+                    Icon(Icons.Default.Info, contentDescription = "Explicar gráfico", tint = Analytic)
+                }
             }
             content()
-            Text("Toque para entender e configurar no gráfico", style = MaterialTheme.typography.labelSmall, color = Analytic)
+            TextButton(onClick = { open = true }) {
+                Icon(Icons.Default.Info, contentDescription = null)
+                Spacer(Modifier.width(6.dp))
+                Text("Entender gráfico e configuração")
+            }
         }
     }
     if (open) AlertDialog(onDismissRequest = { open = false }, title = { Text(title) }, text = { Text(chartExplanation(title)) }, confirmButton = { TextButton(onClick = { open = false }) { Text("Entendi") } })
