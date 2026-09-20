@@ -242,10 +242,20 @@ private fun Status(state: OperationState) {
 
 @Composable
 private fun Metrics(metrics: BacktestMetrics) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Metric(pct(metrics.winRate), "taxa de acerto", Analytic, Modifier.weight(1f))
-        Metric(number(metrics.netProfit), "resultado", if (metrics.netProfit >= 0) Positive else Negative, Modifier.weight(1f))
-        Metric(number(metrics.maxDrawdown), "queda máxima", Negative, Modifier.weight(1f))
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Metric(pct(metrics.winRate), "taxa de acerto", Analytic, Modifier.weight(1f))
+            Metric(number(metrics.netProfit), "resultado", if (metrics.netProfit >= 0) Positive else Negative, Modifier.weight(1f))
+            Metric(number(metrics.maxDrawdown), "queda máxima", Negative, Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Metric(metrics.trades.toString(), "operações", Analytic, Modifier.weight(1f))
+            Metric(number(metrics.profitFactor), "fator de lucro", if (metrics.profitFactor >= 1) Positive else Negative, Modifier.weight(1f))
+            Metric(number(metrics.expectancy), "resultado esperado", if (metrics.expectancy >= 0) Positive else Negative, Modifier.weight(1f))
+        }
+        metrics.breakEvenWinRate?.let { equilibrium ->
+            Text("Taxa mínima para equilíbrio: " + pct(equilibrium) + " • margem observada: " + pct(metrics.winRate - equilibrium), color = if (metrics.winRate >= equilibrium) Positive else Negative, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
