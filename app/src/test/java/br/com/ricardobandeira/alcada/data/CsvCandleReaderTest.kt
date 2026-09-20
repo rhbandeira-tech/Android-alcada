@@ -35,4 +35,15 @@ class CsvCandleReaderTest {
         val csv = "timestamp,open,high,low,close\n1700000000,NaN,11,9,10"
         CsvCandleReader().chunks(csv.byteInputStream()).toList()
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `spread negativo e rejeitado`() {
+        val csv = "timestamp,open,high,low,close,volume,spread\n1700000000,10,11,9,10,1,-0.1"
+        CsvCandleReader().chunks(csv.byteInputStream()).toList()
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `bloco excessivo e rejeitado`() {
+        CsvCandleReader().chunks("timestamp,open,high,low,close".byteInputStream(), 65_537).toList()
+    }
 }
