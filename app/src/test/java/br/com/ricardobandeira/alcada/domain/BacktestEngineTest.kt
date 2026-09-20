@@ -98,4 +98,14 @@ class BacktestEngineTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `operacao rejeita resultado nao finito`() { Trade(1, 2, Double.POSITIVE_INFINITY, true) }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `binario rejeita direcao forex`() {
+        BacktestEngine.binary(candles, listOf(0 to Direction.LONG), 1, .85)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `binario rejeita retorno acima de duzentos por cento`() {
+        BacktestEngine.binary(candles, listOf(0 to Direction.CALL), 1, 2.01)
+    }
 }
