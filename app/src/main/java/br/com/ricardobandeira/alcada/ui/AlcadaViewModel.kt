@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null)
+data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null, val paused: Boolean = false)
 data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
 data class ResearchOptions(val candidates: Int = 2_000, val minimumTrades: Int = 30, val intensive: Boolean = false, val threads: Int? = null, val memoryMb: Int? = null)
 data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>, val monteCarlo: MonteCarloSummary? = null)
@@ -42,6 +42,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     private var importJob: Job? = null
     private var researchJob: Job? = null
     private var lastResearchOptions: ResearchOptions? = null
+    private var researchPaused = false
     private var backtestJob: Job? = null
     private fun friendlyError(error: Throwable): String {
         val message = error.message.orEmpty()
@@ -157,6 +158,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         val budget = options.candidates
         val datasetId = _selectedDataset.value ?: return failResearch("Selecione um conjunto de dados")
         researchJob?.cancel()
+        researchPaused = false
         researchJob = viewModelScope.launch {
             val runId = UUID.randomUUID().toString(); val started = System.currentTimeMillis()
             val dao = (getApplication<Application>() as AlcadaApplication).database.dao()
@@ -165,6 +167,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             runCatching {
                 val candles = repository.loadCandles(datasetId)
                 ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = options.threads ?: if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = options.memoryMb ?: if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50)))).collect { progress ->
+                    while (researchPaused) { kotlinx.coroutines.delay(150); kotlinx.coroutines.currentCoroutineContext().ensureActive() }
                     val ratio = progress.evaluated.toFloat() / budget
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
                     dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
@@ -190,7 +193,9 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         else -> null
     }
 
-    fun cancelResearch() { researchJob?.cancel() }
+    fun pauseResearch() { if (researchJob?.isActive == true) { researchPaused = true; _researchState.value = _researchState.value.copy(paused = true, message = "Pesquisa pausada") } }
+    fun resumeResearch() { if (researchJob?.isActive == true) { researchPaused = false; _researchState.value = _researchState.value.copy(paused = false, message = "Pesquisa retomada") } }
+    fun cancelResearch() { researchPaused = false; researchJob?.cancel() }
     fun repeatResearch() { lastResearchOptions?.let(::runResearch) ?: failResearch("Inicie uma pesquisa antes de tentar repeti-la.") }
     fun cancelBacktest() { backtestJob?.cancel() }
     private fun failResearch(message: String) { _researchState.value = OperationState(error = message) }
