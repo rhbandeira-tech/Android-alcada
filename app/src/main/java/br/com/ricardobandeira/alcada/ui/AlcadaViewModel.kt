@@ -105,10 +105,12 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                     _importState.value = OperationState(true, if (total == 0) 0f else done.toFloat() / total, "Processando: $name")
                 }
             }.onSuccess { (entity, summary) ->
+                importJob = null
                 _selectedDataset.value = entity.id
                 val problems = if (summary.issues.isEmpty()) "" else " • ${summary.issues.size} arquivo(s) com problema"
                 _importState.value = OperationState(progress = 1f, message = "${summary.validCandles} velas válidas • ${summary.duplicates} duplicadas • ${summary.csvFiles} CSV(s)$problems")
             }.onFailure {
+                importJob = null
                 if (it is kotlinx.coroutines.CancellationException) _importState.value = OperationState(message = "Importação cancelada")
                 else _importState.value = OperationState(error = friendlyError(it))
             }
