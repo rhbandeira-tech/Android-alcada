@@ -32,6 +32,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
             target.delete()
             throw IllegalArgumentException("São necessárias pelo menos duas velas válidas.")
         }
+        require(items.isNotEmpty()) { "Selecione pelo menos um arquivo para importar." }
         val label = if (items.size == 1) items.first().second else "Importação de ${items.size} arquivos"
         val entity = DatasetEntity(id, label, label.substringBeforeLast('.').uppercase(), "LOCAL", 1,
             requireNotNull(summary.firstEpochMillis), requireNotNull(summary.lastEpochMillis), target.absolutePath,
