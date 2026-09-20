@@ -89,25 +89,45 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 val candles = repository.loadCandles(id)
                 _backtestState.value = OperationState(true, .35f, "Calculando sinais sem look-ahead…")
                 val result = withContext(Dispatchers.Default) {
-                val direction = if (options.market == Market.BINARY_OPTIONS) options.direction else if (options.direction == Direction.PUT || options.direction == Direction.SHORT) Direction.SHORT else Direction.LONG
-                val signals = SignalEngine.wickSignals(candles, direction)
-                val result = if (options.market == Market.BINARY_OPTIONS) BacktestEngine.binaryResult(candles, signals, options.expiration, options.payout)
-                else BacktestEngine.forexResult(candles, signals, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
-                val split = (candles.size * .7).toInt()
-                fun evaluate(entries: List<Pair<Int, Direction>>, expiration: Int = options.expiration) =
-                    if (options.market == Market.BINARY_OPTIONS) BacktestEngine.binaryResult(candles, entries, expiration, options.payout)
-                    else BacktestEngine.forexResult(candles, entries, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
-                val validationHorizon = if (options.market == Market.BINARY_OPTIONS) options.expiration else options.bars
-                val ins = evaluate(signals.filter { it.first + validationHorizon < split }).metrics.netProfit
-                val oos = evaluate(signals.filter { it.first >= split }).metrics.netProfit
-                val selectedMetadata = datasets.value.firstOrNull { it.id == id }
-                val expiry = if (options.market == Market.BINARY_OPTIONS) (1..5).map { value -> Bucket("${selectedMetadata?.timeframeMinutes ?: 1}m×$value", evaluate(signals, value).metrics.netProfit, signals.size) } else emptyList()
-                val name = selectedMetadata?.symbol ?: "LOCAL"
-                _analysis.value = QuantAnalysis(ChartAnalytics.wickBuckets(ChartAnalytics.wickOutcomes(candles, validationHorizon)), listOf(Bucket("IS", ins, signals.count { it.first + validationHorizon < split }), Bucket("OOS", oos, signals.count { it.first >= split })), expiry, listOf(Bucket(name, result.metrics.netProfit, result.metrics.trades)), ChartAnalytics.dayHourHeatmap(result.trades), MonteCarlo.analyze(result.trades, simulations = 500, seed = 42))
+                    val direction = if (options.market == Market.BINARY_OPTIONS) options.direction
+                        else if (options.direction == Direction.PUT || options.direction == Direction.SHORT) Direction.SHORT else Direction.LONG
+                    val signals = SignalEngine.wickSignals(candles, direction)
+                    val backtest = if (options.market == Market.BINARY_OPTIONS)
+                        BacktestEngine.binaryResult(candles, signals, options.expiration, options.payout)
+                    else BacktestEngine.forexResult(candles, signals, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
+                    val split = (candles.size * .7).toInt()
+                    fun evaluate(entries: List<Pair<Int, Direction>>, expiration: Int = options.expiration) =
+                        if (options.market == Market.BINARY_OPTIONS) BacktestEngine.binaryResult(candles, entries, expiration, options.payout)
+                        else BacktestEngine.forexResult(candles, entries, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
+                    val horizon = if (options.market == Market.BINARY_OPTIONS) options.expiration else options.bars
+                    val insEntries = signals.filter { it.first + horizon < split }
+                    val oosEntries = signals.filter { it.first >= split }
+                    val ins = evaluate(insEntries).metrics.netProfit
+                    val oos = evaluate(oosEntries).metrics.netProfit
+                    val metadata = datasets.value.firstOrNull { it.id == id }
+                    val expiry = if (options.market == Market.BINARY_OPTIONS) (1..5).map { value ->
+                        Bucket("${metadata?.timeframeMinutes ?: 1}m×$value", evaluate(signals, value).metrics.netProfit, signals.size)
+                    } else emptyList()
+                    val name = metadata?.symbol ?: "LOCAL"
+                    _analysis.value = QuantAnalysis(
+                        ChartAnalytics.wickBuckets(ChartAnalytics.wickOutcomes(candles, horizon)),
+                        listOf(Bucket("Dentro", ins, insEntries.size), Bucket("Fora", oos, oosEntries.size)),
+                        expiry, listOf(Bucket(name, backtest.metrics.netProfit, backtest.metrics.trades)),
+                        ChartAnalytics.dayHourHeatmap(backtest.trades),
+                        MonteCarlo.analyze(backtest.trades, simulations = 500, seed = 42)
+                    )
+                    backtest
+                }
                 _backtestState.value = OperationState(true, .85f, "Persistindo resultado…")
-                repository.saveBacktest(id, options.market, result); result
-            }.onSuccess { _result.value = it; _backtestState.value = OperationState(message = "Teste histórico concluído") }
-                .onFailure { if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Teste histórico cancelado") else failBacktest(friendlyError(it)) }
+                repository.saveBacktest(id, options.market, result)
+                result
+            }.onSuccess {
+                _result.value = it
+                _backtestState.value = OperationState(message = "Teste histórico concluído")
+            }.onFailure {
+                if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Teste histórico cancelado")
+                else failBacktest(friendlyError(it))
+            }
         }
     }
 
