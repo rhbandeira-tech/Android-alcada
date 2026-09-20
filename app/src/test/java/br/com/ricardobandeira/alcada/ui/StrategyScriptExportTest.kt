@@ -123,6 +123,16 @@ class StrategyScriptExportTest {
         }
     }
 
+    @Test fun unknownExportLanguageIsRejected() {
+        val strategy = StrategyEntity(
+            id="test-format", researchRunId="run", name="Format", market="BINARY_OPTIONS",
+            symbol="EURUSD", profile="EXPERIMENTAL", definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
+        assertFailsWith<IllegalArgumentException> { strategyScript(strategy, data, "Unknown") }
+    }
+
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
@@ -135,3 +145,4 @@ class StrategyScriptExportTest {
         assertTrue(lua.contains("return (false)"))
     }
 }
+import kotlin.test.assertFailsWith
