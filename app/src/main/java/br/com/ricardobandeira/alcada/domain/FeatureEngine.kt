@@ -16,7 +16,7 @@ object FeatureEngine {
     }
 
     fun atr(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
-        require(period > 0 && endExclusive <= candles.size)
+        require(period > 0 && endExclusive in 0..candles.size)
         val start = maxOf(1, endExclusive - period)
         if (endExclusive <= 1) return 0.0
         return (start until endExclusive).map { i ->
@@ -28,7 +28,7 @@ object FeatureEngine {
     fun volatility(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
         require(period > 0 && endExclusive in 0..candles.size)
         if (endExclusive <= 1) return 0.0
-        val returns = (maxOf(1, endExclusive - period) until endExclusive).map { i -> candles[i].close / candles[i - 1].close - 1.0 }
+        val returns = (maxOf(1, endExclusive - period) until endExclusive).mapNotNull { i ->\n            val previous = candles[i - 1].close\n            if (previous == 0.0) null else (candles[i].close / previous - 1.0).takeIf { it.isFinite() }\n        }
         if (returns.size < 2) return 0.0
         val mean = returns.average()
         return sqrt(returns.sumOf { (it - mean) * (it - mean) } / (returns.size - 1))
