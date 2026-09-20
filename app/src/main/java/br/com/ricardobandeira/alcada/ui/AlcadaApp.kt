@@ -1,4 +1,3 @@
-            Text("Faixa observada: " + number((values.minOfOrNull { it.value } ?: 0.0)) + " até " + number((values.maxOfOrNull { it.value } ?: 0.0)) + " • " + values.size + " grupos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 package br.com.ricardobandeira.alcada.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -311,6 +310,7 @@ private fun HeatmapCard(values: List<Bucket>) {
             }
             val best = values.maxByOrNull { it.value }
             val worst = values.minByOrNull { it.value }
+            Text("Faixa observada: " + number(values.minOf { it.value }) + " até " + number(values.maxOf { it.value }) + " • " + values.size + " grupos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Melhor janela: " + (best?.label ?: "—") + " " + number(best?.value ?: Double.NaN) + " • Pior: " + (worst?.label ?: "—") + " " + number(worst?.value ?: Double.NaN), style = MaterialTheme.typography.bodySmall)
         }
     }
