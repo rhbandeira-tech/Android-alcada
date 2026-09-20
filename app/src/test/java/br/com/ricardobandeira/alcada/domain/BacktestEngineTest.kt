@@ -108,4 +108,9 @@ class BacktestEngineTest {
     fun `binario rejeita retorno acima de duzentos por cento`() {
         BacktestEngine.binary(candles, listOf(0 to Direction.CALL), 1, 2.01)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `metricas rejeitam equilibrio acima de cem por cento`() {
+        BacktestEngine.metrics(emptyList(), 1.01)
+    }
 }
