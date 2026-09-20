@@ -90,7 +90,7 @@ class ResearchEngine {
             val split = (researchCandles.size * .7).toInt()
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
             val insSignals = signals.filter { it.first + expiration < split }
-            val oosSignals = signals.filter { it.first > split }
+            val oosSignals = signals.filter { it.first >= split }
             currentCoroutineContext().ensureActive()
             checkpoint()
             val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, binaryPayout)
@@ -106,7 +106,7 @@ class ResearchEngine {
                     val end = if (fold == 3) researchCandles.size else (fold + 1) * foldSize
                     BacktestEngine.binary(
                         researchCandles,
-                        signals.filter { it.first > start && it.first + expiration < end },
+                        signals.filter { it.first >= start && it.first + expiration < end },
                         expiration,
                         binaryPayout
                     )
