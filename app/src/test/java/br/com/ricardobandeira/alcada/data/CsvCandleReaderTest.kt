@@ -23,4 +23,16 @@ class CsvCandleReaderTest {
         val candle = CsvCandleReader().chunks(csv.byteInputStream()).single().single()
         assertEquals(11.0, candle.close, 0.0)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `campo opcional numerico invalido nao e ignorado`() {
+        val csv = "timestamp,open,high,low,close,volume,spread\n1700000000,10,11,9,10,abc,0.1"
+        CsvCandleReader().chunks(csv.byteInputStream()).toList()
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `numero nao finito e rejeitado`() {
+        val csv = "timestamp,open,high,low,close\n1700000000,NaN,11,9,10"
+        CsvCandleReader().chunks(csv.byteInputStream()).toList()
+    }
 }
