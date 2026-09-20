@@ -12,7 +12,7 @@ data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: Eva
 
 /** Evolutionary, bounded search. Resource budget is honored and candidate batches remain small. */
 class ResearchEngine {
-    fun discover(candles: List<Candle>, budget: ResearchBudget): Flow<ResearchProgress> = flow {
+    fun discover(candles: List<Candle>, budget: ResearchBudget, checkpoint: suspend () -> Unit = {}): Flow<ResearchProgress> = flow {
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
@@ -25,6 +25,7 @@ class ResearchEngine {
         val elite = mutableListOf<EvaluatedStrategy>()
         repeat(budget.maxCandidates) { n ->
             currentCoroutineContext().ensureActive()
+            checkpoint()
             // After the initial population, mutate/recombine the current elite without retaining a huge population.
             val parent = if (elite.isEmpty()) best else elite[random.nextInt(elite.size)]
             val eliteRule = parent?.strategy?.entries?.firstOrNull()
@@ -83,6 +84,7 @@ class ResearchEngine {
             val insSignals = signals.filter { it.first + expiration < split }
             val oosSignals = signals.filter { it.first > split }
             currentCoroutineContext().ensureActive()
+            checkpoint()
             val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, .8)
             val oosResult = BacktestEngine.binaryResult(researchCandles, oosSignals, expiration, .8)
             val oos = oosResult.metrics
@@ -114,6 +116,7 @@ class ResearchEngine {
                 val stabilityPenalty = (1.0 / (1.0 + regimeDispersion)).coerceIn(0.0, 1.0)
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .45 + stability * .30 + stabilityPenalty * .15 + sampleFactor * .10).coerceIn(0.0, 1.0)
                 currentCoroutineContext().ensureActive()
+                checkpoint()
                 val monteCarlo = MonteCarlo.analyze(oosResult.trades, simulations = 200, seed = budget.seed + n)
                 val tailPenalty = if (monteCarlo.p05NetProfit > 0.0) 1.0 else .75
                 val adjustedRobustness = (robustness * tailPenalty).coerceIn(0.0, 1.0)
