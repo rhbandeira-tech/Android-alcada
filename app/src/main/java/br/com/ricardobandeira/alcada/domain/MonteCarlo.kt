@@ -3,6 +3,7 @@ package br.com.ricardobandeira.alcada.domain
 import java.util.Random
 import kotlin.math.max
 import kotlin.math.sqrt
+import kotlin.math.ceil
 
 data class MonteCarloSummary(
     val simulations: Int,
@@ -47,7 +48,7 @@ object MonteCarlo {
         profits.sort()
         drawdowns.sort()
         fun percentile(values: DoubleArray, p: Double) =
-            values[(values.lastIndex * p).toInt().coerceIn(values.indices)]
+            values[ceil(values.lastIndex * p).toInt().coerceIn(values.indices)]
         return MonteCarloSummary(
             simulations,
             percentile(profits, .50),
