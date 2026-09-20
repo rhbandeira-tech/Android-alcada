@@ -322,6 +322,7 @@ private fun HeatmapCard(values: List<Bucket>) {
 
 @Composable
 private fun LineChart(title: String, values: List<Double>, color: Color) {
+    var selectedIndex by remember(values) { mutableIntStateOf(values.lastIndex.coerceAtLeast(0)) }
     ChartCard(title) {
         if (values.size < 2) Text("Dados insuficientes para este gráfico", color = Pending) else {
             Canvas(Modifier.fillMaxWidth().height(130.dp)) {
@@ -331,11 +332,13 @@ private fun LineChart(title: String, values: List<Double>, color: Color) {
                     drawLine(color, Offset(size.width * index / (values.size - 1), size.height * (1 - ((pair.first - minimum) / range)).toFloat()), Offset(size.width * (index + 1) / (values.size - 1), size.height * (1 - ((pair.second - minimum) / range)).toFloat()), strokeWidth = 4f)
                 }
             }
+            Slider(value = selectedIndex.toFloat(), onValueChange = { selectedIndex = it.toInt().coerceIn(0, values.lastIndex) }, valueRange = 0f..values.lastIndex.toFloat(), steps = (values.size - 2).coerceAtLeast(0))
+            Text("Ponto " + (selectedIndex + 1) + " de " + values.size + " • valor " + number(values[selectedIndex]), color = color, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
             val first = values.first()
             val last = values.last()
             Text("Início " + number(first) + " • Final " + number(last) + " • Mínimo " + number(values.min()) + " • Máximo " + number(values.max()), style = MaterialTheme.typography.bodySmall)
             Text("Variação: " + number(last - first), color = if (last >= first) Positive else Negative, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
-            Text("Pontos analisados: " + values.size, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Deslize o seletor para inspecionar cada ponto da série.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
