@@ -118,4 +118,9 @@ class BacktestEngineTest {
         val result = BacktestEngine.binaryResult(candles, listOf(2 to Direction.CALL, 0 to Direction.CALL), 1, .85)
         assertEquals(candles[0].epochMillis, result.trades.first().entryTime)
     }
+
+    @Test fun `binario ignora sinal identico duplicado`() {
+        val result = BacktestEngine.binary(candles, listOf(0 to Direction.CALL, 0 to Direction.CALL), 1, .85)
+        assertEquals(1, result.trades)
+    }
 }
