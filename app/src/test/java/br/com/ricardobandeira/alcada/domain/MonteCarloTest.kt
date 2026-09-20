@@ -18,6 +18,19 @@ class MonteCarloTest {
         assertTrue(first.p95MaxDrawdown >= 0.0)
     }
 
+    @Test fun `bloco configurado e respeitado`() {
+        val trades = (1L..20L).map { Trade(it, it + 1, if (it % 3L == 0L) -1.0 else .8, it % 3L != 0L) }
+        val result = MonteCarlo.analyze(trades, 100, 9, blockSize = 4)
+        assertEquals(4, result.blockSize)
+        assertEquals(100, result.simulations)
+    }
+
+    @Test fun `bloco automatico fica dentro do tamanho da amostra`() {
+        val trades = (1L..3L).map { Trade(it, it + 1, .8, true) }
+        val result = MonteCarlo.analyze(trades, 20, 3)
+        assertTrue(result.blockSize in 1..trades.size)
+    }
+
     @Test fun `amostra vazia retorna resumo neutro`() {
         val result = MonteCarlo.analyze(emptyList(), 50, 1)
         assertEquals(0.0, result.medianNetProfit, 0.0)
