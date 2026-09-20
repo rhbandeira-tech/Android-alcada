@@ -124,7 +124,7 @@ class ResearchEngine {
                     oosWinRate = oos.winRate,
                     robustness = robustness,
                     status = if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
-                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5,
+                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5 || regimeDispersion > 2.0,
                     oosTrades = oos.trades,
                     oosExpectancy = oos.expectancy,
                     oosProfitFactor = oos.profitFactor,
