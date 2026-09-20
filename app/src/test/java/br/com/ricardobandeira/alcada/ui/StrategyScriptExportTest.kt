@@ -84,6 +84,21 @@ class StrategyScriptExportTest {
         assertTrue(expression.contains("-8.0"))
     }
 
+    @Test fun luaAdvancedInputsFailClosedInsteadOfInventingDefaults() {
+        val strategy = StrategyEntity(
+            id="test-lua", researchRunId="run", name="Lua parity", market="BINARY_OPTIONS",
+            symbol="EURUSD", profile="EXPERIMENTAL", definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "atrRangeRatio:>=:1.0&candleSequence:>=:3.0&levelDistanceRatio:<=:1.0"
+        val script = strategyScript(strategy, data, "Lua")
+        assertTrue(script.contains("atr14 and atr14/range or (0/0)"))
+        assertTrue(script.contains("sequence and math.abs(sequence) or (0/0)"))
+        assertTrue(script.contains("extreme20 and math.abs(c-extreme20)/range or (0/0)"))
+        assertTrue(script.contains("utcHourValue or -1"))
+        assertTrue(script.contains("média simples de 14 True Ranges"))
+    }
+
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
