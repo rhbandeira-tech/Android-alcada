@@ -496,6 +496,7 @@ internal fun scriptRule(encoded: String, language: String, direction: String? = 
     val numericValue = p.getOrNull(2)?.toDoubleOrNull() ?: return null
     val value = numericValue.toString()
     if (language == "TradingView" && feature == "sessionUtc") {
+        if (op != "==" || numericValue !in listOf(1.0, 2.0, 3.0)) return null
         return when (numericValue.toInt()) {
             1 -> "(hour(time, \"UTC\") >= 0 and hour(time, \"UTC\") <= 6)"
             2 -> "(hour(time, \"UTC\") >= 7 and hour(time, \"UTC\") <= 12)"
@@ -507,7 +508,7 @@ internal fun scriptRule(encoded: String, language: String, direction: String? = 
         val portable = setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio","atrRangeRatio","candleSequence","levelDistanceRatio")
         if (feature in portable) return feature + " " + op + " " + value
         if (feature == "sessionUtc") {
-            if (language == "MQL5") return null
+            if (language == "MQL5" || op != "==" || numericValue !in listOf(1.0, 2.0, 3.0)) return null
             val join = " and "
             return when (numericValue.toInt()) {
                 1 -> "(utcHour >= 0" + join + "utcHour <= 6)"
