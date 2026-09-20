@@ -351,6 +351,7 @@ private fun ruleDescription(encoded: String): String {
         "atrRangeRatio" -> "volatilidade ATR/amplitude"
         "candleSequence" -> "sequência de velas"
         "levelDistanceRatio" -> "distância até suporte/resistência"
+        "accelerationRangeRatio" -> "aceleração/amplitude"
         else -> "condição quantitativa"
     }
     val operator = when (parts.getOrNull(1)) { ">=" -> "maior ou igual a"; "<=" -> "menor ou igual a"; ">" -> "maior que"; "<" -> "menor que"; else -> parts.getOrNull(1).orEmpty() }
