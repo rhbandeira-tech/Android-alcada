@@ -151,7 +151,8 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                 FilterChip(selected = profile == key, onClick = { profile = key }, label = { Text(if (key == "TODOS") "Todos os perfis" else profileLabel(key)) })
             }
         }
-        filtered.groupBy { it.profile }.forEach { entry ->
+        val profileOrder = listOf("CONSERVATIVE", "MODERATE", "AGGRESSIVE", "EXPERIMENTAL")
+        filtered.groupBy { it.profile }.entries.sortedBy { profileOrder.indexOf(it.key).let { index -> if (index < 0) Int.MAX_VALUE else index } }.forEach { entry ->
             val profileItems = entry.value
             Text(profileLabel(entry.key), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Analytic)
             Text("Ranking: 1º melhor → " + profileItems.size + "º menor resultado segundo o filtro selecionado.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -269,6 +270,7 @@ private fun Metrics(metrics: BacktestMetrics) {
 @Composable
 private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Resumo visual: ${result.trades.size} operações • resultado final ${number(result.equity.lastOrNull() ?: 0.0)} • pior queda ${number(result.drawdown.minOrNull() ?: 0.0)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         LineChart("Evolução do resultado", result.equity, Positive)
         LineChart("Queda do resultado", result.drawdown, Negative)
         LineChart("Taxa de acerto ao longo do tempo", result.rollingWinRate, Analytic)
