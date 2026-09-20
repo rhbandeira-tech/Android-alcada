@@ -107,6 +107,20 @@ class StrategyScriptExportTest {
         }
     }
 
+    @Test fun missingDirectionBlocksGeneratedSignal() {
+        val strategy = StrategyEntity(
+            id="test-direction", researchRunId="run", name="Direction", market="BINARY_OPTIONS",
+            symbol="EURUSD", profile="EXPERIMENTAL", definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[12] = "wickBodyRatio:>=:2.0"
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            val script = strategyScript(strategy, data, language)
+            assertTrue(script.contains("direção ausente ou inválida"))
+            assertTrue(script.contains("false"))
+        }
+    }
+
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
