@@ -72,4 +72,9 @@ class MonteCarloTest {
     fun `percentil rejeita valor nao finito`() {
         MonteCarlo.nearestRank(doubleArrayOf(1.0), Double.NaN)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `monte carlo rejeita operacoes fora de ordem`() {
+        MonteCarlo.analyze(listOf(Trade(2, 3, 1.0, true), Trade(1, 2, -1.0, false)), simulations = 10)
+    }
 }
