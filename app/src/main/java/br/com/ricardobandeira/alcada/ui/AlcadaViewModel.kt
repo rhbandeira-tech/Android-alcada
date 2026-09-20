@@ -180,7 +180,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         lastResearchOptions = options
         if (options.candidates !in 100..100_000) return failResearch("Escolha entre 100 e 100.000 candidatos.")
         if (options.minimumTrades !in 5..10_000) return failResearch("O mínimo de operações deve ficar entre 5 e 10.000.")
-        if (!options.payout.isFinite() || options.payout <= 0.0 || options.payout > 2.0) return failResearch("O payout da pesquisa deve ficar entre 1% e 200%.")
+        if (!options.payout.isFinite() || options.payout < .01 || options.payout > 2.0) return failResearch("O payout da pesquisa deve ficar entre 1% e 200%.")
         if (options.threads != null && options.threads !in 1..Runtime.getRuntime().availableProcessors().coerceAtLeast(1)) return failResearch("A quantidade de processadores selecionada não é válida neste aparelho.")
         if (options.memoryMb != null && options.memoryMb !in 64..2048) return failResearch("A memória reservada deve ficar entre 64 e 2.048 MB.")
         val budget = options.candidates
