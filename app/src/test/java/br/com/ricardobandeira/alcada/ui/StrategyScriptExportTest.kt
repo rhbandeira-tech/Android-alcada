@@ -23,11 +23,18 @@ class StrategyScriptExportTest {
     }
 
     @Test fun implementedAdvancedRulesAreConvertedInAllFormats() {
-        val implemented = advanced.filter { it != "spreadRangeRatio" }
+        val implemented = advanced.filter { it != "spreadRangeRatio" && it != "sessionUtc" }
         implemented.forEach { feature ->
             listOf("TradingView", "MQL5", "Lua").forEach { language ->
                 assertNotNull("$feature must be converted in $language", scriptRule("$feature:>=:0.5", language, "CALL"))
             }
+        }
+    }
+
+    @Test fun sessionUtcUsesCategoricalSessionId() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNotNull("$language must convert UTC session id", scriptRule("sessionUtc:==:1.0", language, "CALL"))
+            assertNull("$language must reject non-session threshold", scriptRule("sessionUtc:==:0.5", language, "CALL"))
         }
     }
 
@@ -42,7 +49,6 @@ class StrategyScriptExportTest {
             assertNotNull(it, scriptRule("$it:>=:1.0", "TradingView", "CALL"))
         }
         assertNotNull(scriptRule("sessionUtc:==:1.0", "TradingView", "CALL"))
-        assertNull(scriptRule("sessionUtc:>=:1.0", "TradingView", "CALL"))
         assertNull(scriptRule("spreadRangeRatio:>=:0.1", "TradingView", "CALL"))
     }
 
