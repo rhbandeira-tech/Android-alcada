@@ -9,5 +9,11 @@ data class EconomicEventModel(val id: String, val name: String, val currency: St
     }
     val surprise get() = if (actual != null && forecast != null) actual - forecast else null
 }
-interface EconomicCalendarProvider { suspend fun events(fromEpochMillis: Long, toEpochMillis: Long): List<EconomicEventModel> }
+interface EconomicCalendarProvider {
+    suspend fun events(fromEpochMillis: Long, toEpochMillis: Long): List<EconomicEventModel>
+}
+
+fun validateEconomicEventWindow(fromEpochMillis: Long, toEpochMillis: Long) {
+    require(fromEpochMillis >= 0 && toEpochMillis >= fromEpochMillis) { "O intervalo da agenda econômica é inválido." }
+}
 
