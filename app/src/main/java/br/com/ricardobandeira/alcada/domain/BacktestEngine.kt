@@ -74,6 +74,7 @@ object BacktestEngine {
     }
 
     fun result(trades: List<Trade>, breakEven: Double? = null): BacktestResult {
+        require(trades.zipWithNext().all { (a, b) -> a.entryTime <= b.entryTime }) { "As operações precisam estar em ordem cronológica." }
         var current = 0.0
         var peak = 0.0
         val equity = trades.map { current += it.pnl; current }
