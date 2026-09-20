@@ -152,12 +152,13 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
             }
         }
         filtered.groupBy { it.profile }.forEach { entry ->
+            val profileItems = entry.value
             Text(profileLabel(entry.key), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Analytic)
-            entry.value.forEachIndexed { index, strategy ->
+            Text("Ranking: 1º melhor → " + profileItems.size + "º menor resultado segundo o filtro selecionado.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            profileItems.forEachIndexed { index, strategy ->
                 StrategyCard(strategy, index + 1, index == 0)
             }
         }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
