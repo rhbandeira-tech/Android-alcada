@@ -13,7 +13,8 @@ data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: Eva
 /** Evolutionary, bounded search: candidates are generated and evaluated one-by-one, never materialized. */
 class ResearchEngine {
     fun discover(candles: List<Candle>, budget: ResearchBudget): Flow<ResearchProgress> = flow {
-        require(candles.size >= 20)
+        require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
         var accepted = 0; var best: EvaluatedStrategy? = null
         val elite = mutableListOf<EvaluatedStrategy>()
@@ -36,6 +37,7 @@ class ResearchEngine {
             val eliteExpiry = parent?.strategy?.exit?.bars
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
+            currentCoroutineContext().ensureActive()
             val signals = SignalEngine.filteredWickSignals(
                 candles = candles,
                 direction = direction,
@@ -48,6 +50,7 @@ class ResearchEngine {
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
             val insSignals = signals.filter { it.first + expiration < split }
             val oosSignals = signals.filter { it.first > split }
+            currentCoroutineContext().ensureActive()
             val ins = BacktestEngine.binary(candles, insSignals, expiration, .8)
             val oos = BacktestEngine.binary(candles, oosSignals, expiration, .8)
             if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
