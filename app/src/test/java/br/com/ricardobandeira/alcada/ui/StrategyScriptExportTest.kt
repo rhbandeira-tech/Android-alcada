@@ -47,8 +47,7 @@ class StrategyScriptExportTest {
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
-            symbol="EURUSD", timeframeMinutes=1, profile="EXPERIMENTAL",
-            validationStatus="PENDING", definitionJson="", createdAt=0L
+            symbol="EURUSD", profile="EXPERIMENTAL", definitionJson="", createdAt=0L
         )
         val data = MutableList(13) { "" }
         data[9] = "CALL"; data[10] = "1"; data[11] = "1"; data[12] = "spreadRangeRatio:<=:0.1"
