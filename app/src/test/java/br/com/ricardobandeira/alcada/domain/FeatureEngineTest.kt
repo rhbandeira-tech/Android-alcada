@@ -78,4 +78,23 @@ class FeatureEngineTest {
         assertEquals(4.0, support, 1e-9)
         assertEquals(1.0, resistance, 1e-9)
     }
+
+    @Test
+    fun `sequencia positiva representa velas de alta consecutivas`() {
+        val candles = listOf(
+            Candle(1, 10.0, 11.0, 9.0, 10.5, 1.0, 0.0),
+            Candle(2, 10.5, 12.0, 10.0, 11.5, 1.0, 0.0),
+            Candle(3, 11.5, 13.0, 11.0, 12.5, 1.0, 0.0)
+        )
+        assertEquals(3, FeatureEngine.candleColorSequence(candles))
+    }
+
+    @Test
+    fun `sequencia negativa representa velas de baixa consecutivas`() {
+        val candles = listOf(
+            Candle(1, 12.0, 12.5, 11.0, 11.5, 1.0, 0.0),
+            Candle(2, 11.5, 12.0, 10.0, 10.5, 1.0, 0.0)
+        )
+        assertEquals(-2, FeatureEngine.candleColorSequence(candles))
+    }
 }
