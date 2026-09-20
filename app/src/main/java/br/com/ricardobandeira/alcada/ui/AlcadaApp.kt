@@ -1,3 +1,4 @@
+            Text("Faixa observada: " + number((values.minOfOrNull { it.value } ?: 0.0)) + " até " + number((values.maxOfOrNull { it.value } ?: 0.0)) + " • " + values.size + " grupos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 package br.com.ricardobandeira.alcada.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
