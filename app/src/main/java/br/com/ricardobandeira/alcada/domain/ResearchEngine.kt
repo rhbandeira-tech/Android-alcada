@@ -134,7 +134,9 @@ class ResearchEngine {
                     oosExpectancy = oos.expectancy,
                     oosProfitFactor = oos.profitFactor,
                     stableForwardFolds = stableFolds,
-                    forwardFolds = forwardTests.size
+                    forwardFolds = forwardTests.size,
+                    monteCarloP05 = monteCarlo.p05NetProfit,
+                    monteCarloP95Drawdown = monteCarlo.p95MaxDrawdown
                 )
                 val score = { e: EvaluatedStrategy -> e.robustness * .5 + e.metrics.expectancy.coerceIn(-1.0, 1.0) * .3 - e.metrics.maxDrawdown * .02 }
                 if (best == null || score(result) > score(best!!)) best = result
