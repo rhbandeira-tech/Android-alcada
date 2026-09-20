@@ -47,6 +47,7 @@ class ResearchEngine {
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
             currentCoroutineContext().ensureActive()
             val sessionGate = n % 6
+            val maxSpreadRatio = if (n % 5 == 0) .10 + random.nextDouble() * .30 else null
             val rawSignals = SignalEngine.filteredWickSignals(
                 candles = researchCandles,
                 direction = direction,
@@ -55,7 +56,8 @@ class ResearchEngine {
                 minimumDirectionalClose = closeLocation,
                 limit = 5_000
             )
-            val signals = if (sessionGate == 0) rawSignals else rawSignals.filter { (index, _) ->
+            val spreadFiltered = maxSpreadRatio?.let { maximum -> rawSignals.filter { (index, _) -> FeatureEngine.spreadRangeRatio(researchCandles[index]) <= maximum } } ?: rawSignals
+            val signals = if (sessionGate == 0) spreadFiltered else spreadFiltered.filter { (index, _) ->
                 val hour = FeatureEngine.sessionHour(researchCandles[index].epochMillis)
                 when (sessionGate) { 1 -> hour in 0..6; 2 -> hour in 7..12; 3 -> hour in 13..20; else -> true }
             }
