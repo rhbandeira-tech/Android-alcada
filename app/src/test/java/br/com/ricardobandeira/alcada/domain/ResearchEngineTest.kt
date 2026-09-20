@@ -18,4 +18,14 @@ class ResearchEngineTest {
         assertEquals(first.map { it.evaluated to it.accepted }, second.map { it.evaluated to it.accepted })
         assertEquals(first.last().best?.strategy?.id, second.last().best?.strategy?.id)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `orcamento rejeita processadores invalidos`() {
+        ResearchBudget(threads = 0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `orcamento rejeita memoria insegura`() {
+        ResearchBudget(memoryMb = 32)
+    }
 }
