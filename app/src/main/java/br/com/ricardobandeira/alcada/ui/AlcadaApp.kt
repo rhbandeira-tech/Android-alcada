@@ -461,12 +461,32 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
 
 private fun strategyScript(strategy: StrategyEntity, data: List<String>, language: String): String {
     val rules = data.getOrNull(12)?.split('&')?.filter { it.isNotBlank() }.orEmpty()
-    val comments = rules.joinToString("\n") { ruleDescription(it) }
+    val expressions = rules.mapNotNull { scriptRule(it, language) }
+    val condition = if (expressions.isEmpty()) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
+    val name = strategy.name.replace("\"", "")
     return when (language) {
-        "MQL5" -> "// Alçada - " + strategy.name + "\n// " + strategy.symbol + "\n// " + comments.replace("\n", "\n// ") + "\nvoid OnTick(){\n  // Implemente as condições acima usando OHLC do período indicado.\n}"
-        "TradingView" -> "//@version=5\nstrategy(Alcada, overlay=true)\n// " + comments.replace("\n", "\n// ") + "\n// Converta as condições acima em expressões Pine antes de habilitar ordens."
-        else -> "-- Alçada - " + strategy.name + "\n-- " + strategy.symbol + "\n-- " + comments.replace("\n", "\n-- ") + "\nfunction sinal()\n  -- Converta as condições para a API Lua da plataforma.\n  return false\nend"
+        "TradingView" -> "//@version=5\nstrategy(\"Alcada - " + name + "\", overlay=true)\nsignal = " + condition + "\nplotshape(signal, style=shape.triangleup, location=location.belowbar)\nif signal\n    strategy.entry(\"Alcada\", " + if (data.getOrNull(9) == "PUT") "strategy.short)" else "strategy.long)"
+        "MQL5" -> "// Alçada - " + name + "\n#include <Trade/Trade.mqh>\nCTrade trade;\nvoid OnTick(){\n double o=iOpen(_Symbol,_Period,1),h=iHigh(_Symbol,_Period,1),l=iLow(_Symbol,_Period,1),c=iClose(_Symbol,_Period,1),pc=iClose(_Symbol,_Period,2);\n double range=MathMax(h-l,_Point),body=MathMax(MathAbs(c-o),_Point);\n double wickBodyRatio=MathMax(h-o,h-c)/body,bodyRangeRatio=MathAbs(c-o)/range,closeLocation=(c-l)/range;\n double momentumRangeRatio=MathAbs(c-pc)/range,gapRangeRatio=MathAbs(o-pc)/range,accelerationRangeRatio=0;\n if(" + condition + ") trade." + if(data.getOrNull(9)=="PUT") "Sell(0.01,_Symbol);\n}" else "Buy(0.01,_Symbol);\n}"
+        else -> "-- Alçada - " + name + "\nfunction sinal(o,h,l,c,pc)\n local range=math.max(h-l,0.0000001)\n local body=math.max(math.abs(c-o),0.0000001)\n local wickBodyRatio=math.max(h-o,h-c)/body\n local bodyRangeRatio=math.abs(c-o)/range\n local closeLocation=(c-l)/range\n local momentumRangeRatio=math.abs(c-pc)/range\n local gapRangeRatio=math.abs(o-pc)/range\n local accelerationRangeRatio=0\n return (" + condition + ")\nend"
     }
+}
+
+private fun scriptRule(encoded: String, language: String): String? {
+    val p = encoded.split(':')
+    val feature = p.getOrNull(0) ?: return null
+    val op = p.getOrNull(1) ?: return null
+    val value = p.getOrNull(2)?.toDoubleOrNull()?.toString() ?: return null
+    if (language != "TradingView") return if (feature in setOf("wickBodyRatio","bodyRangeRatio","closeLocation","momentumRangeRatio","gapRangeRatio","accelerationRangeRatio")) feature + " " + op + " " + value else null
+    val expression = when (feature) {
+        "wickBodyRatio" -> "(math.max(high-open, high-close)/math.max(math.abs(close-open),syminfo.mintick))"
+        "bodyRangeRatio" -> "(math.abs(close-open)/math.max(high-low,syminfo.mintick))"
+        "closeLocation" -> "((close-low)/math.max(high-low,syminfo.mintick))"
+        "momentumRangeRatio" -> "(math.abs(close-close[1])/math.max(high-low,syminfo.mintick))"
+        "gapRangeRatio" -> "(math.abs(open-close[1])/math.max(high-low,syminfo.mintick))"
+        "accelerationRangeRatio" -> "(math.abs((close-close[1])-(close[1]-close[2]))/math.max(high-low,syminfo.mintick))"
+        else -> return null
+    }
+    return expression + " " + op + " " + value
 }
 
 private fun ruleDescription(encoded: String): String {
