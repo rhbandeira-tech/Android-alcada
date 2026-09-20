@@ -511,7 +511,13 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
     Text("Gere uma base de implementação e copie para sua plataforma. Regras não convertidas ficam bloqueadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items(listOf("Lua", "MQL5", "TradingView")) { language ->
-            AssistChip(onClick = { format = language }, label = { Text(language) }, leadingIcon = { Icon(Icons.Default.Code, null) })
+            val preview = strategyScript(strategy, data, language)
+            val needsReview = preview.contains("REVISÃO OBRIGATÓRIA")
+            AssistChip(
+                onClick = { format = language },
+                label = { Text(language + if (needsReview) " • revisar" else " • compatível") },
+                leadingIcon = { Icon(Icons.Default.Code, null, tint = if (needsReview) Pending else Positive) }
+            )
         }
     }
     format?.let { language ->
@@ -519,7 +525,13 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
         AlertDialog(onDismissRequest = { format = null }, title = { Text("Script " + language) }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Revise ativo, período, tamanho da posição e parâmetros da corretora antes de usar.", color = Pending, style = MaterialTheme.typography.bodySmall)
-                if (script.contains("REVISÃO OBRIGATÓRIA")) Text("Código bloqueado para entrada automática: alguns filtros ainda precisam de conversão específica para esta linguagem.", color = Negative, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                val reviewLine = script.lineSequence().firstOrNull { it.contains("REVISÃO OBRIGATÓRIA") }
+                if (reviewLine != null) {
+                    Text("Requer revisão: o sinal permanece bloqueado até que todas as regras sejam representadas com segurança.", color = Negative, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                    Text(reviewLine.substringAfter("REVISÃO OBRIGATÓRIA - ").trim().trimStart('/', '-').trim(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    Text("Compatibilidade: todas as regras codificadas desta estratégia foram convertidas para $language. O script gera sinais e não executa ordens automaticamente.", color = Positive, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                }
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) { Text(script, Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall) }
             }
         }, confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(script)); copiedLanguage = language; format = null }) { Text("Copiar script") } }, dismissButton = { TextButton(onClick = { format = null }) { Text("Fechar") } })
