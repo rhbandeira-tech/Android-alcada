@@ -83,6 +83,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun selectDataset(id: String) { _selectedDataset.value = id }
+    fun deleteDataset(id: String) { viewModelScope.launch { runCatching { repository.deleteDataset(id) }.onSuccess { if (_selectedDataset.value == id) _selectedDataset.value = null }.onFailure { _importState.value = OperationState(error = friendlyError(it)) } } }
 
     fun importFiles(uris: List<Uri>) {
         if (uris.isEmpty()) return
