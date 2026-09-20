@@ -27,7 +27,7 @@ object FeatureEngine {
     }
 
     fun spreadRangeRatio(candle: Candle): Double =
-        if (candle.range <= 0.0) 0.0 else (candle.spread / candle.range).takeIf { it.isFinite() } ?: 0.0
+        if (candle.range <= 0.0) 0.0 else (candle.spread / candle.range).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
     fun atrRangeRatio(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
         if (endExclusive <= 0) return 0.0
