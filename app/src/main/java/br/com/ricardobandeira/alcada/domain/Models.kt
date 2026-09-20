@@ -54,9 +54,9 @@ data class EvaluatedStrategy(val strategy: StrategyDefinition, val metrics: Back
 
 data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2, val memoryMb: Int = 256, val seed: Long = 42, val minimumTrades: Int = 30) {
     init {
-        require(maxCandidates > 0) { "A pesquisa precisa avaliar pelo menos um candidato." }
-        require(threads > 0) { "A quantidade de processadores precisa ser positiva." }
-        require(memoryMb >= 64) { "Reserve pelo menos 64 MB para a pesquisa." }
+        require(maxCandidates in 1..1_000_000) { "A pesquisa deve avaliar entre 1 e 1.000.000 de candidatos." }
+        require(threads in 1..256) { "A quantidade de processadores deve ficar entre 1 e 256." }
+        require(memoryMb in 64..16_384) { "A memória reservada deve ficar entre 64 MB e 16 GB." }
         require(minimumTrades > 0) { "O mínimo de operações precisa ser positivo." }
     }
 }
