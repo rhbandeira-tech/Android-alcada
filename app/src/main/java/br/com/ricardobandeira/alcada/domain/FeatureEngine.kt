@@ -11,7 +11,8 @@ object FeatureEngine {
         val wick = current.upperWick + current.lowerWick
         return CandleFeatures(current.body, current.upperWick, current.lowerWick,
             wick / maxOf(current.body, epsilon), wick / maxOf(current.range, epsilon), current.range,
-            previous?.let { current.close - it.close } ?: 0.0, previous?.let { current.open - it.close } ?: 0.0,\n            current.body / maxOf(current.range, epsilon), (current.close - current.low) / maxOf(current.range, epsilon)
+            previous?.let { current.close - it.close } ?: 0.0, previous?.let { current.open - it.close } ?: 0.0,
+            current.body / maxOf(current.range, epsilon), (current.close - current.low) / maxOf(current.range, epsilon))
     }
 
     fun atr(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
