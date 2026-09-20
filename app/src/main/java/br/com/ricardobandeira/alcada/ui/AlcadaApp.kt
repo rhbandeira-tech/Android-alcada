@@ -526,7 +526,7 @@ internal fun scriptRule(encoded: String, language: String, direction: String? = 
         "gapRangeRatio" -> "(math.abs(open-close[1])/math.max(high-low,1e-12))"
         "accelerationRangeRatio" -> "(math.abs((close-close[1])-(close[1]-close[2]))/math.max(high-low,1e-12))"
         "atrRangeRatio" -> "(ta.sma(ta.tr(true),14)/math.max(high-low,1e-12))"
-        "candleSequence" -> "math.abs(close>open ? (close[1]>open[1] ? (close[2]>open[2] ? (close[3]>open[3] ? 4.0 : 3.0) : 2.0) : 1.0) : (close<open ? (close[1]<open[1] ? (close[2]<open[2] ? (close[3]<open[3] ? -4.0 : -3.0) : -2.0) : -1.0) : 0.0))"
+        "candleSequence" -> "math.abs(close>open ? (close[1]>open[1] ? (close[2]>open[2] ? (close[3]>open[3] ? (close[4]>open[4] ? (close[5]>open[5] ? (close[6]>open[6] ? (close[7]>open[7] ? 8.0 : 7.0) : 6.0) : 5.0) : 4.0) : 3.0) : 2.0) : 1.0) : (close<open ? (close[1]<open[1] ? (close[2]<open[2] ? (close[3]<open[3] ? (close[4]<open[4] ? (close[5]<open[5] ? (close[6]<open[6] ? (close[7]<open[7] ? -8.0 : -7.0) : -6.0) : -5.0) : -4.0) : -3.0) : -2.0) : -1.0) : 0.0))"
         "levelDistanceRatio" -> if (direction == "PUT") "(math.abs(close-ta.lowest(low,20))/math.max(high-low,1e-12))" else "(math.abs(ta.highest(high,20)-close)/math.max(high-low,1e-12))"
         else -> return null
     }
