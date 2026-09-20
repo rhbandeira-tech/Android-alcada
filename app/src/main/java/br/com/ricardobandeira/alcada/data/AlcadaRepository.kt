@@ -75,6 +75,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
             }
         }
         require(candles.size >= 2) { "O arquivo precisa conter pelo menos duas velas válidas." }
+        require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "Os dados precisam estar em ordem cronológica." }
         dao.touchDataset(id, System.currentTimeMillis())
         candles
     }
