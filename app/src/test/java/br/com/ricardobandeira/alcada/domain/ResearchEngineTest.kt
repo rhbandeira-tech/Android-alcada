@@ -45,4 +45,10 @@ class ResearchEngineTest {
         val candles = (0 until 20).map { Candle(it.toLong(), 1.0, 1.1, .9, 1.0) }
         ResearchEngine().discover(candles, ResearchBudget(maxCandidates = 1), .009).toList()
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `orcamento rejeita candidatos excessivos`() { ResearchBudget(maxCandidates = 1_000_001) }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `orcamento rejeita memoria excessiva`() { ResearchBudget(memoryMb = 16_385) }
 }
