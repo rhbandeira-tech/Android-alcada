@@ -76,6 +76,14 @@ class StrategyScriptExportTest {
         assertFalse(pineAtr.contains("ta.atr"))
     }
 
+    @Test fun pineCandleSequenceMatchesEightCandleEngineLimit() {
+        val expression = scriptRule("candleSequence:>=:8.0", "TradingView", "CALL")!!
+        assertTrue(expression.contains("close[7]>open[7]"))
+        assertTrue(expression.contains("close[7]<open[7]"))
+        assertTrue(expression.contains("8.0"))
+        assertTrue(expression.contains("-8.0"))
+    }
+
     @Test fun unsupportedRuleBlocksAutomaticSignal() {
         val strategy = StrategyEntity(
             id="test", researchRunId="run", name="Parity", market="BINARY_OPTIONS",
