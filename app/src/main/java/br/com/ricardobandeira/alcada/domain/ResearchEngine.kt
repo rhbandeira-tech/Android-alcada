@@ -60,7 +60,7 @@ class ResearchEngine {
                     val end = if (fold == 3) candles.size else (fold + 1) * foldSize
                     BacktestEngine.binary(
                         candles,
-                        signals.filter { it.first >= start && it.first + expiration < end },
+                        signals.filter { it.first > start && it.first + expiration < end },
                         expiration,
                         .8
                     )
