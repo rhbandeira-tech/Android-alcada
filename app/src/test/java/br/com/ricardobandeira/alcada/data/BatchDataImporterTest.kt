@@ -63,7 +63,7 @@ class BatchDataImporterTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `csv individual respeita limite de tamanho`() {
-        val work = createTempDir()
+        val work = createTempDirectory("alcada_limit_").toFile()
         val output = File(work, "saida.csv")
         val csv = "timestamp,open,high,low,close\n1700000000,10,11,9,10\n"
         BatchDataImporter(work, maxExpandedBytes = 16).import(
