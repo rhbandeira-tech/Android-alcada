@@ -193,4 +193,88 @@ class StrategyScriptExportTest {
         assertTrue(lua.contains("REVISÃO OBRIGATÓRIA"))
         assertTrue(lua.contains("return (false)"))
     }
+
+    @Test fun unsupportedRulesBlockEveryExportFormat() {
+        val strategy = StrategyEntity("blocked-all", "run", "Blocked all", "BINARY_OPTIONS", "EURUSD", "EXPERIMENTAL", "", 0L)
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "spreadRangeRatio:<=:0.1"
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            val script = strategyScript(strategy, data, language)
+            assertTrue("$language must flag mandatory review", script.contains("REVISÃO OBRIGATÓRIA"))
+            assertTrue("$language must contain a blocked condition", script.contains("false"))
+        }
+    }
+
+    @Test fun putDirectionKeepsDirectionalLevelRulePortable() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNotNull("$language PUT level distance", scriptRule("levelDistanceRatio:<=:1.0", language, "PUT"))
+        }
+    }
+
+    @Test fun supportedComparisonOperatorsStayPortable() {
+        listOf(">=", "<=", ">", "<", "==").forEach { operator ->
+            listOf("TradingView", "MQL5", "Lua").forEach { language ->
+                assertNotNull("$operator in $language", scriptRule("wickBodyRatio:$operator:2.0", language, "CALL"))
+            }
+        }
+    }
+
+    @Test fun unknownFeatureFailsClosed() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNull(scriptRule("futureUnknownFeature:>=:1.0", language, "CALL"))
+        }
+    }
+
+    @Test fun emptyRulesDoNotCreateOrderExecutionPrimitives() {
+        val strategy = StrategyEntity("empty-rules", "run", "Empty rules", "BINARY_OPTIONS", "EURUSD", "EXPERIMENTAL", "", 0L)
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            val script = strategyScript(strategy, data, language)
+            assertFalse(script.contains("strategy.entry"))
+            assertFalse(script.contains("trade.Buy"))
+            assertFalse(script.contains("trade.Sell"))
+        }
+    }
+
+    @Test fun newlineInRuleCannotBypassParser() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNull(scriptRule("wickBodyRatio:>=:2.0\ninjected", language, "CALL"))
+        }
+    }
+
+    @Test fun negativeFiniteThresholdIsParsedSafely() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNotNull(scriptRule("momentumRangeRatio:>=:-0.5", language, "CALL"))
+        }
+    }
+
+    @Test fun invalidSessionIdsStayBlocked() {
+        listOf("TradingView", "Lua").forEach { language ->
+            assertNull(scriptRule("sessionUtc:==:0.0", language, "CALL"))
+            assertNull(scriptRule("sessionUtc:==:4.0", language, "CALL"))
+        }
+    }
+
+    @Test fun mql5SessionRuleTriggersMandatoryReview() {
+        val strategy = StrategyEntity("mql-session", "run", "MQL session", "BINARY_OPTIONS", "EURUSD", "EXPERIMENTAL", "", 0L)
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "sessionUtc:==:1.0"
+        val script = strategyScript(strategy, data, "MQL5")
+        assertTrue(script.contains("REVISÃO OBRIGATÓRIA"))
+        assertTrue(script.contains("false"))
+    }
+
+    @Test fun allExportsRemainSignalOnlyForPutDirection() {
+        val strategy = StrategyEntity("put-signal", "run", "PUT signal", "BINARY_OPTIONS", "EURUSD", "EXPERIMENTAL", "", 0L)
+        val data = MutableList(13) { "" }
+        data[9] = "PUT"; data[12] = "wickBodyRatio:>=:2.0"
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            val script = strategyScript(strategy, data, language)
+            assertFalse(script.contains("strategy.entry"))
+            assertFalse(script.contains("trade.Buy"))
+            assertFalse(script.contains("trade.Sell"))
+            assertFalse(script.contains("OrderSend"))
+        }
+    }
 }
