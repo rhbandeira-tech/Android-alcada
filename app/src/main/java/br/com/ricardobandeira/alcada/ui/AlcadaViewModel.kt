@@ -191,7 +191,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             runCatching {
                 val candles = repository.loadCandles(datasetId)
                 ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = options.threads ?: if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = options.memoryMb ?: if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50))), payout = options.payout) {
-                    while (researchPaused) { kotlinx.coroutines.delay(150); kotlinx.coroutines.currentCoroutineContext().ensureActive() }
+                    while (researchPaused) { kotlinx.coroutines.delay(150); kotlinx.coroutines.ensureActive() }
                 }.collect { progress ->
                     val ratio = progress.evaluated.toFloat() / budget
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
