@@ -361,7 +361,7 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
         BarChart("Desempenho por horário (UTC)", ChartAnalytics.performanceByHour(result.trades))
         BarChart("Desempenho por dia", ChartAnalytics.performanceByDay(result.trades))
         analysis?.let {
-            val oosValues = it.isOos.map { point -> point.second }
+            val oosValues = it.isOos.map { point -> point.value }
             val inSample = oosValues.getOrNull(0)
             val outSample = oosValues.getOrNull(1)
             val retention = if (inSample != null && outSample != null && kotlin.math.abs(inSample) > 1e-12) outSample / kotlin.math.abs(inSample) else null
