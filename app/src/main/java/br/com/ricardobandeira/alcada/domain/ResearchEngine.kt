@@ -12,11 +12,12 @@ data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: Eva
 
 /** Evolutionary, bounded search. Resource budget is honored and candidate batches remain small. */
 class ResearchEngine {
-    fun discover(candles: List<Candle>, budget: ResearchBudget, checkpoint: suspend () -> Unit = {}): Flow<ResearchProgress> = flow {
+    fun discover(candles: List<Candle>, budget: ResearchBudget, payout: Double = .85, checkpoint: suspend () -> Unit = {}): Flow<ResearchProgress> = flow {
+        require(payout.isFinite() && payout > 0.0) { "O payout precisa ser maior que zero." }
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
-        val binaryPayout = .85
+        val binaryPayout = payout
         val workerCount = budget.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
         val batchSize = minOf(workerCount * 4, 64)
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
