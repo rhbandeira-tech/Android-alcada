@@ -50,11 +50,16 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
 
     private fun normalize(input: File, label: String): File {
         val target = File.createTempFile("alcada_normalizado_", ".csv", workDir); var previous = Long.MIN_VALUE
+        var count = 0L
         target.bufferedWriter().use { writer -> input.inputStream().use { stream ->
             CsvCandleReader().chunks(stream).forEach { chunk -> chunk.forEach { c ->
-                require(c.epochMillis >= previous) { "O arquivo ${label} não está em ordem cronológica." }; previous = c.epochMillis; writer.appendLine(row(c))
+                require(c.epochMillis >= previous) { "O arquivo ${label} não está em ordem cronológica." }
+                previous = c.epochMillis
+                writer.appendLine(row(c))
+                count++
             } }
         } }
+        require(count > 0) { "O arquivo ${label} não contém velas válidas." }
         return target
     }
 
