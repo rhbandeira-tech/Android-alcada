@@ -77,7 +77,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
 
     suspend fun saveResearch(runId: String, datasetId: String, result: EvaluatedStrategy) {
         val symbol = dao.dataset(datasetId)?.symbol ?: result.strategy.symbol
-        dao.saveStrategy(StrategyEntity(result.strategy.id, runId, result.strategy.name, result.strategy.market.name, symbol,
+        dao.saveStrategy(StrategyEntity("$runId:${result.strategy.id}", runId, result.strategy.name, result.strategy.market.name, symbol,
             profile(result).name, encodeStrategy(result), System.currentTimeMillis()))
     }
 
