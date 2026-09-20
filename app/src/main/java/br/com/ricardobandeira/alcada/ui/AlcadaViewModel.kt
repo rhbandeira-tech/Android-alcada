@@ -95,6 +95,8 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
 
 
     fun runBacktest(options: BacktestOptions) {
+        val validation = validateBacktest(options)
+        if (validation != null) return failBacktest(validation)
         val id = _selectedDataset.value ?: return failBacktest("Selecione um conjunto de dados")
         backtestJob?.cancel()
         backtestJob = viewModelScope.launch {
@@ -115,7 +117,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                         else BacktestEngine.forexResult(candles, entries, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
                     val horizon = if (options.market == Market.BINARY_OPTIONS) options.expiration else options.bars
                     val insEntries = signals.filter { it.first + horizon < split }
-                    val oosEntries = signals.filter { it.first >= split }
+                    val oosEntries = signals.filter { it.first > split }
                     val ins = evaluate(insEntries).metrics.netProfit
                     val oos = evaluate(oosEntries).metrics.netProfit
                     val metadata = datasets.value.firstOrNull { it.id == id }
@@ -146,6 +148,8 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun runResearch(options: ResearchOptions = ResearchOptions()) {
+        if (options.candidates !in 100..100_000) return failResearch("Escolha entre 100 e 100.000 candidatos.")
+        if (options.minimumTrades !in 5..10_000) return failResearch("O mínimo de operações deve ficar entre 5 e 10.000.")
         val budget = options.candidates
         val datasetId = _selectedDataset.value ?: return failResearch("Selecione um conjunto de dados")
         researchJob?.cancel()
@@ -169,6 +173,17 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                     _researchState.value = OperationState(message = if (cancelled) "Pesquisa cancelada" else null, error = if (cancelled) null else friendlyError(error))
                 }
         }
+    }
+
+    private fun validateBacktest(options: BacktestOptions): String? = when {
+        options.market == Market.BINARY_OPTIONS && options.expiration <= 0 -> "A expiração precisa ser maior que zero."
+        options.market == Market.BINARY_OPTIONS && (!options.payout.isFinite() || options.payout <= 0.0) -> "O payout precisa ser maior que zero."
+        options.market != Market.BINARY_OPTIONS && (!options.stopLoss.isFinite() || options.stopLoss <= 0.0) -> "O stop loss precisa ser maior que zero."
+        options.market != Market.BINARY_OPTIONS && (!options.takeProfit.isFinite() || options.takeProfit <= 0.0) -> "O take profit precisa ser maior que zero."
+        options.market != Market.BINARY_OPTIONS && (!options.trailing.isFinite() || options.trailing <= 0.0) -> "O trailing stop precisa ser maior que zero."
+        options.market != Market.BINARY_OPTIONS && options.bars <= 0 -> "O limite de velas precisa ser maior que zero."
+        options.market != Market.BINARY_OPTIONS && (!options.cost.isFinite() || options.cost < 0.0) -> "O custo por operação não pode ser negativo."
+        else -> null
     }
 
     fun cancelResearch() { researchJob?.cancel() }
