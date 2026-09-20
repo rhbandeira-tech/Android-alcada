@@ -17,7 +17,7 @@ data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: Eva
 /** Evolutionary, bounded search. Resource budget is honored and candidate batches remain small. */
 class ResearchEngine {
     fun discover(candles: List<Candle>, budget: ResearchBudget, payout: Double = .85, checkpoint: suspend () -> Unit = {}): Flow<ResearchProgress> = flow {
-        require(payout.isFinite() && payout > 0.0 && payout <= 2.0) { "O payout precisa ficar entre 1% e 200%." }
+        require(payout.isFinite() && payout >= .01 && payout <= 2.0) { "O payout precisa ficar entre 1% e 200%." }
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
