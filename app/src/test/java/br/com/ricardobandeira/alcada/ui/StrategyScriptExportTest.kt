@@ -176,5 +176,5 @@ class StrategyScriptExportTest {
         assertTrue(lua.contains("return (false)"))
     }
 }
-import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
