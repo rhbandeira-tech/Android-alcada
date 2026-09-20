@@ -115,7 +115,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun cancelImport() { importJob?.cancel() }
+    fun cancelImport() { importJob?.cancel(); importJob = null }
 
 
     fun runBacktest(options: BacktestOptions) {
@@ -227,9 +227,9 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
 
     fun pauseResearch() { if (researchJob?.isActive == true) { researchPaused = true; _researchState.value = _researchState.value.copy(paused = true, message = "Pesquisa pausada") } }
     fun resumeResearch() { if (researchJob?.isActive == true) { researchPaused = false; _researchState.value = _researchState.value.copy(paused = false, message = "Pesquisa retomada") } }
-    fun cancelResearch() { researchPaused = false; researchJob?.cancel() }
+    fun cancelResearch() { researchPaused = false; researchJob?.cancel(); researchJob = null }
     fun repeatResearch() { lastResearchOptions?.let(::runResearch) ?: failResearch("Inicie uma pesquisa antes de tentar repeti-la.") }
-    fun cancelBacktest() { backtestJob?.cancel() }
+    fun cancelBacktest() { backtestJob?.cancel(); backtestJob = null }
     private fun failResearch(message: String) { _researchState.value = OperationState(error = message) }
     private fun failBacktest(message: String) { _backtestState.value = OperationState(error = message) }
 }
