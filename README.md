@@ -15,8 +15,11 @@ Alçada é um laboratório mobile, não um robô de execução de ordens. Todo c
 - CSV processado como `Sequence` de chunks; metadados de dataset separados do cache bruto.
 - Room para pesquisas, estratégias, backtests, validações, datasets, eventos econômicos e configurações. A limpeza WorkManager remove apenas arquivos brutos sem apagar resultados.
 - Interfaces explícitas para Dukascopy e agenda econômica. Nenhuma URL, chave ou API não confirmada foi inventada.
-- Testes unitários para features, fronteira temporal, payout/break-even e importação em chunks.
-- Gráficos derivados exclusivamente de trades/candles calculados: equity, drawdown, rolling win rate, distribuição, hora/dia, heatmap, IS/OOS, ativo, expiração e relação pavio/movimento futuro.
+- Testes unitários para features, fronteira temporal, payout/break-even, importação em chunks, Monte Carlo, analytics e segurança/paridade dos scripts exportados.
+- Gráficos derivados exclusivamente de trades/candles calculados: equity, drawdown, rolling win rate, distribuição, hora/dia, heatmap, IS/OOS, ativo, expiração e relação pavio/movimento futuro. Gráficos e células analíticas têm inspeção/interação e ajuda contextual.
+- Ranking por perfil ordenável por robustez, fora da amostra, fator de lucro ou resultado esperado, com campeões por perfil, comparação direta e auditoria de evidências.
+- Tela de teste inclui diagnóstico numérico, leitura operacional, retenção IS/OOS com tamanho das amostras e painel de validação com Monte Carlo.
+- Exportação de sinais para TradingView/Pine, MQL5 e Lua. Regras não representáveis são bloqueadas com `REVISÃO OBRIGATÓRIA`; os scripts gerados não enviam ordens reais.
 
 ## Arquitetura
 
@@ -27,7 +30,7 @@ data/     Room, CSV e contratos de provedores externos
 work/     manutenção persistente do cache local
 ```
 
-A estratégia contém mercado, ativo, timeframe, direção, regras de entrada, regra de saída e seed. Resultados distinguem taxa de acerto, expectativa, fator de lucro, queda máxima, equilíbrio e robustez fora da amostra. O ranking planejado por perfil pondera robustez e risco; jamais deve ordenar somente pela taxa de acerto.
+A estratégia contém mercado, ativo, timeframe, direção, regras de entrada, regra de saída e seed. Resultados distinguem taxa de acerto, expectativa, fator de lucro, queda máxima, equilíbrio e robustez fora da amostra. O ranking por perfil permite comparar robustez, risco e desempenho sem ordenar somente pela taxa de acerto. O rótulo de campeão representa o líder no critério selecionado, não uma garantia de desempenho futuro.
 
 ## Dados e reprodução
 
@@ -53,5 +56,5 @@ O APK sai em `app/build/outputs/apk/debug/app-debug.apk`. O repositório não ve
 
 - Cliente Dukascopy escolhido/configurado pelo responsável pelo produto e provider de calendário econômico confiável.
 - Foreground WorkManager para pesquisas que precisem sobreviver ao encerramento forçado do processo; a execução atual é cancelável e preservada enquanto o processo está ativo.
-- Validação temporal e Monte Carlo podem continuar recebendo refinamentos estatísticos; a versão atual já executa divisão dentro/fora da amostra, folds temporais e bootstrap em blocos.
+- Validação temporal e Monte Carlo podem continuar recebendo refinamentos estatísticos; a versão atual já executa divisão dentro/fora da amostra, folds temporais, bootstrap em blocos e leitura conjunta das evidências.
 - Benchmark em aparelhos representativos para refinar a calibração automática; a interface atual já acompanha bateria, carregamento e estado térmico.
