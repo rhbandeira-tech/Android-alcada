@@ -21,8 +21,19 @@ enum class Direction { LONG, SHORT, CALL, PUT }
 enum class ValidationStatus { PENDING, VALIDATED, FRAGILE, REJECTED }
 enum class Profile { CONSERVATIVE, MODERATE, AGGRESSIVE, EXPERIMENTAL }
 
-data class EntryRule(val feature: String, val operator: String, val threshold: Double)
-data class ExitRule(val stopLoss: Double? = null, val takeProfit: Double? = null, val trailingStop: Double? = null, val bars: Int? = null, val condition: EntryRule? = null)
+data class EntryRule(val feature: String, val operator: String, val threshold: Double) {
+    init {
+        require(feature.isNotBlank()) { "A variável da regra não pode ficar vazia." }
+        require(operator in setOf(">", ">=", "<", "<=", "==")) { "Operador de regra não suportado." }
+        require(threshold.isFinite()) { "O limite da regra precisa ser um número válido." }
+    }
+}
+data class ExitRule(val stopLoss: Double? = null, val takeProfit: Double? = null, val trailingStop: Double? = null, val bars: Int? = null, val condition: EntryRule? = null) {
+    init {
+        require(listOfNotNull(stopLoss, takeProfit, trailingStop).all { it.isFinite() && it > 0.0 }) { "Limites de saída precisam ser positivos e válidos." }
+        require(bars == null || bars > 0) { "O limite de velas precisa ser positivo." }
+    }
+}
 data class StrategyDefinition(
     val id: String, val name: String, val market: Market, val symbol: String, val timeframeMinutes: Int,
     val direction: Direction, val entries: List<EntryRule>, val exit: ExitRule, val seed: Long
