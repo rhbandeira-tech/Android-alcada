@@ -129,4 +129,18 @@ class FeatureEngineTest {
         val candle = Candle(1, 10.0, 12.0, 8.0, 11.0, 1.0, 0.2)
         assertEquals(0.05, FeatureEngine.spreadRangeRatio(candle), 1e-9)
     }
+
+    @Test fun `agregacao preserva OHLC volume e spread medio`() {
+        val candles = listOf(
+            Candle(1, 1.0, 1.3, .9, 1.2, 10.0, .02),
+            Candle(2, 1.2, 1.5, 1.1, 1.4, 20.0, .04)
+        )
+        val result = FeatureEngine.aggregate(candles, 2).single()
+        assertEquals(1.0, result.open, 1e-12)
+        assertEquals(1.5, result.high, 1e-12)
+        assertEquals(.9, result.low, 1e-12)
+        assertEquals(1.4, result.close, 1e-12)
+        assertEquals(30.0, result.volume, 1e-12)
+        assertEquals(.03, result.spread, 1e-12)
+    }
 }
