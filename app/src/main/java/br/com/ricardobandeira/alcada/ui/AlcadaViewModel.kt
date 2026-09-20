@@ -16,7 +16,6 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 
 data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null)
-data class ImportUiSummary(val text: String)
 data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
 data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>)
 
@@ -75,10 +74,10 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
 
 
     fun runBacktest(options: BacktestOptions) {
-        val id = _selectedDataset.value ?: return failBacktest("Selecione um dataset")
+        val id = _selectedDataset.value ?: return failBacktest("Selecione um conjunto de dados")
         backtestJob?.cancel()
         backtestJob = viewModelScope.launch {
-            _backtestState.value = OperationState(true, .05f, "Carregando dados em chunks…")
+            _backtestState.value = OperationState(true, .05f, "Carregando dados em blocos…")
             runCatching {
                 val candles = repository.loadCandles(id)
                 _backtestState.value = OperationState(true, .35f, "Calculando sinais sem look-ahead…")
@@ -99,13 +98,13 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 _analysis.value = QuantAnalysis(ChartAnalytics.wickBuckets(ChartAnalytics.wickOutcomes(candles, validationHorizon)), listOf(Bucket("IS", ins, signals.count { it.first + validationHorizon < split }), Bucket("OOS", oos, signals.count { it.first >= split })), expiry, listOf(Bucket(name, result.metrics.netProfit, result.metrics.trades)), ChartAnalytics.dayHourHeatmap(result.trades))
                 _backtestState.value = OperationState(true, .85f, "Persistindo resultado…")
                 repository.saveBacktest(id, options.market, result); result
-            }.onSuccess { _result.value = it; _backtestState.value = OperationState(message = "Backtest concluído") }
-                .onFailure { if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Backtest cancelado") else failBacktest(it.message ?: "Falha no backtest") }
+            }.onSuccess { _result.value = it; _backtestState.value = OperationState(message = "Teste histórico concluído") }
+                .onFailure { if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Teste histórico cancelado") else failBacktest(it.message ?: "Falha no teste histórico") }
         }
     }
 
     fun runResearch(budget: Int = 2_000) {
-        val datasetId = _selectedDataset.value ?: return failResearch("Selecione um dataset")
+        val datasetId = _selectedDataset.value ?: return failResearch("Selecione um conjunto de dados")
         researchJob?.cancel()
         researchJob = viewModelScope.launch {
             val runId = UUID.randomUUID().toString(); val started = System.currentTimeMillis()
@@ -116,7 +115,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 val candles = repository.loadCandles(datasetId)
                 ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, minimumTrades = minOf(30, maxOf(5, candles.size / 50)))).collect { progress ->
                     val ratio = progress.evaluated.toFloat() / budget
-                    _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos • ${progress.accepted} aprovados")
+                    _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
                     dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
                     if (progress.finished) progress.best?.let { repository.saveResearch(runId, datasetId, it) }
                 }
