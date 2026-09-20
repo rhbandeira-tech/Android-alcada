@@ -351,6 +351,7 @@ private fun BarChart(title: String, values: List<Bucket>) {
             }
             val best = values.maxByOrNull { it.value }
             val worst = values.minByOrNull { it.value }
+            Text("Faixa observada: " + number(values.minOf { it.value }) + " até " + number(values.maxOf { it.value }) + " • " + values.size + " grupos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Melhor: " + (best?.label ?: "—") + " " + number(best?.value ?: Double.NaN) + " • Pior: " + (worst?.label ?: "—") + " " + number(worst?.value ?: Double.NaN), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
