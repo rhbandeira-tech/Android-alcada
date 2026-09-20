@@ -4,6 +4,7 @@ import kotlin.math.abs
 
 data class Candle(val epochMillis: Long, val open: Double, val high: Double, val low: Double, val close: Double, val volume: Double = 0.0, val spread: Double = 0.0) {
     init {
+        require(epochMillis >= 0) { "O horário da vela não pode ser negativo." }
         require(listOf(open, high, low, close, volume, spread).all { it.isFinite() }) { "OHLC contém valor não finito." }
         require(high >= maxOf(open, close, low) && low <= minOf(open, close, high)) { "OHLC inválido" }
         require(volume >= 0.0) { "O volume não pode ser negativo." }
