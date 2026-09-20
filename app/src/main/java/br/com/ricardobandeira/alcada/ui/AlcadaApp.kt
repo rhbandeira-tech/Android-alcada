@@ -339,12 +339,12 @@ private fun BarChart(title: String, values: List<Bucket>) {
     ChartCard(title) {
         if (values.isEmpty()) Text("Amostra insuficiente", color = Pending) else {
             val maxValue = max(1e-9, values.maxOf { kotlin.math.abs(it.value) })
-            Row(Modifier.fillMaxWidth().height(120.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
-                values.forEach { bucket ->
-                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            LazyRow(Modifier.fillMaxWidth().height(132.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+                items(values) { bucket ->
+                    Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(number(bucket.value), style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                        Surface(Modifier.fillMaxWidth().height((82 * kotlin.math.abs(bucket.value) / maxValue).toFloat().dp), color = if (bucket.value >= 0) Positive else Negative) {}
-                        Text(bucket.label.take(6), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                        Surface(Modifier.width(46.dp).height((82 * kotlin.math.abs(bucket.value) / maxValue).toFloat().dp), color = if (bucket.value >= 0) Positive else Negative) {}
+                        Text(bucket.label.take(9), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
                 }
             }
