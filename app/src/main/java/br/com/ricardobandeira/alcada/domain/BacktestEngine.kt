@@ -94,8 +94,11 @@ object BacktestEngine {
             "upperWick" -> feature.upperWick
             "lowerWick" -> feature.lowerWick
             "momentum" -> feature.momentum
+            "momentumRangeRatio" -> kotlin.math.abs(feature.momentum) / feature.range.coerceAtLeast(1e-12)
             "gap" -> feature.gap
+            "gapRangeRatio" -> kotlin.math.abs(feature.gap) / feature.range.coerceAtLeast(1e-12)
             "acceleration" -> feature.acceleration
+            "accelerationRangeRatio" -> kotlin.math.abs(feature.acceleration) / feature.range.coerceAtLeast(1e-12)
             "range" -> feature.range
             "bodyRangeRatio" -> feature.bodyRangeRatio
             "closeLocation" -> feature.closeLocation
