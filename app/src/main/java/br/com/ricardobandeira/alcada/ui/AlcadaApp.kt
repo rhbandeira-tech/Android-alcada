@@ -244,21 +244,24 @@ private fun Status(state: OperationState) {
 
 @Composable
 private fun Metrics(metrics: BacktestMetrics) {
+    var open by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Metric(pct(metrics.winRate), "taxa de acerto", Analytic, Modifier.weight(1f))
-            Metric(number(metrics.netProfit), "resultado", if (metrics.netProfit >= 0) Positive else Negative, Modifier.weight(1f))
-            Metric(number(metrics.maxDrawdown), "queda máxima", Negative, Modifier.weight(1f))
+            Metric(pct(metrics.winRate), "taxa de acerto", Analytic, Modifier.weight(1f), { open = "Taxa de acerto" })
+            Metric(number(metrics.netProfit), "resultado", if (metrics.netProfit >= 0) Positive else Negative, Modifier.weight(1f), { open = "Resultado" })
+            Metric(number(metrics.maxDrawdown), "queda máxima", Negative, Modifier.weight(1f), { open = "Queda máxima" })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Metric(metrics.trades.toString(), "operações", Analytic, Modifier.weight(1f))
-            Metric(number(metrics.profitFactor), "fator de lucro", if (metrics.profitFactor >= 1) Positive else Negative, Modifier.weight(1f))
-            Metric(number(metrics.expectancy), "resultado esperado", if (metrics.expectancy >= 0) Positive else Negative, Modifier.weight(1f))
+            Metric(metrics.trades.toString(), "operações", Analytic, Modifier.weight(1f), { open = "Operações" })
+            Metric(number(metrics.profitFactor), "fator de lucro", if (metrics.profitFactor >= 1) Positive else Negative, Modifier.weight(1f), { open = "Fator de lucro" })
+            Metric(number(metrics.expectancy), "resultado esperado", if (metrics.expectancy >= 0) Positive else Negative, Modifier.weight(1f), { open = "Resultado esperado" })
         }
         metrics.breakEvenWinRate?.let { equilibrium ->
             Text("Taxa mínima para equilíbrio: " + pct(equilibrium) + " • margem observada: " + pct(metrics.winRate - equilibrium), color = if (metrics.winRate >= equilibrium) Positive else Negative, style = MaterialTheme.typography.bodySmall)
         }
+        Text("Toque em qualquer número para entender o que ele mede.", style = MaterialTheme.typography.labelSmall, color = Analytic)
     }
+    open?.let { metric -> AlertDialog(onDismissRequest = { open = null }, title = { Text(metric) }, text = { Text(metricExplanation(metric, metrics)) }, confirmButton = { TextButton(onClick = { open = null }) { Text("Entendi") } }) }
 }
 
 @Composable
