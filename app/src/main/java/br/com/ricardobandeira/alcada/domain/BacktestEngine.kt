@@ -101,6 +101,6 @@ object BacktestEngine {
             "closeLocation" -> feature.closeLocation
             else -> return false
         }
-        return when (rule.operator) { ">" -> value > rule.threshold; ">=" -> value >= rule.threshold; "<" -> value < rule.threshold; "<=" -> value <= rule.threshold; else -> false }
+        return when (rule.operator) { ">" -> value > rule.threshold; ">=" -> value >= rule.threshold; "<" -> value < rule.threshold; "<=" -> value <= rule.threshold; "==" -> value == rule.threshold; else -> false }
     }
 }
