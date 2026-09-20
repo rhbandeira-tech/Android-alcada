@@ -113,4 +113,9 @@ class BacktestEngineTest {
     fun `metricas rejeitam equilibrio acima de cem por cento`() {
         BacktestEngine.metrics(emptyList(), 1.01)
     }
+
+    @Test fun `binario ordena operacoes cronologicamente`() {
+        val result = BacktestEngine.binaryResult(candles, listOf(2 to Direction.CALL, 0 to Direction.CALL), 1, .85)
+        assertEquals(candles[0].epochMillis, result.trades.first().entryTime)
+    }
 }
