@@ -139,4 +139,14 @@ class BacktestEngineTest {
     fun `metricas rejeitam operacoes fora de ordem`() {
         BacktestEngine.metrics(listOf(Trade(2, 3, 1.0, true), Trade(1, 2, -1.0, false)))
     }
+
+    @Test fun `saida condicional aceita igualdade`() {
+        val data = listOf(
+            Candle(0, 10.0, 10.5, 9.5, 10.0),
+            Candle(1, 10.0, 10.5, 9.5, 10.0),
+            Candle(2, 10.0, 10.5, 9.5, 10.0)
+        )
+        val result = BacktestEngine.forexResult(data, listOf(0 to Direction.LONG), ExitRule(bars = 2, condition = EntryRule("range", "==", 1.0)), 0.0)
+        assertEquals(1L, result.trades.single().exitTime)
+    }
 }
