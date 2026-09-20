@@ -490,7 +490,7 @@ private fun scriptRule(encoded: String, language: String): String? {
         "accelerationRangeRatio" -> "(math.abs((close-close[1])-(close[1]-close[2]))/math.max(high-low,syminfo.mintick))"
         "atrRangeRatio" -> "(ta.atr(14)/math.max(high-low,syminfo.mintick))"
         "candleSequence" -> "(close>open ? (close[1]>open[1] ? (close[2]>open[2] ? 3.0 : 2.0) : 1.0) : (close[1]<open[1] ? (close[2]<open[2] ? -3.0 : -2.0) : -1.0))"
-        "levelDistanceRatio" -> "(" + if (p.getOrNull(3) == "PUT") "math.abs(close-ta.lowest(low,20))" else "math.abs(ta.highest(high,20)-close)" + ")/math.max(high-low,syminfo.mintick))"
+        "levelDistanceRatio" -> return null
         else -> return null
     }
     return expression + " " + op + " " + value
