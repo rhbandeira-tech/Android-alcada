@@ -23,7 +23,10 @@ class RawDataCleanupWorker(context: Context, params: WorkerParameters) : Corouti
                 }
             }
             Result.success()
-        } catch (_: Exception) { Result.retry() } finally { db.close() }
+        } catch (_: java.io.IOException) { Result.retry() }
+        catch (_: android.database.sqlite.SQLiteException) { Result.retry() }
+        catch (_: Exception) { Result.failure() }
+        finally { db.close() }
     }
 }
 
