@@ -34,13 +34,19 @@ class ResearchEngine {
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
         val evaluationSlots = Semaphore(workerCount)
-        suspend fun parallelPreflight(source: List<Candle>, factor: Int): Boolean = coroutineScope {
-            val checks = listOf<suspend () -> Boolean>(
-                { source.size >= 20 },
-                { source.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis } },
-                { factor in 1..5 }
-            )
-            checks.map { check -> async(Dispatchers.Default) { evaluationSlots.withPermit { check() } } }.awaitAll().all { it }
+        suspend fun evaluateBacktests(
+            source: List<Candle>,
+            insSignals: List<Pair<Int, Direction>>,
+            oosSignals: List<Pair<Int, Direction>>,
+            expiration: Int
+        ): Pair<BacktestMetrics, BacktestResult> = coroutineScope {
+            val insDeferred = async(Dispatchers.Default) {
+                evaluationSlots.withPermit { BacktestEngine.binary(source, insSignals, expiration, binaryPayout) }
+            }
+            val oosDeferred = async(Dispatchers.Default) {
+                evaluationSlots.withPermit { BacktestEngine.binaryResult(source, oosSignals, expiration, binaryPayout) }
+            }
+            insDeferred.await() to oosDeferred.await()
         }
         require(budget.memoryMb >= 64) { "A pesquisa precisa de pelo menos 64 MB de orçamento de memória." }
         var accepted = 0; var best: EvaluatedStrategy? = null
@@ -66,7 +72,7 @@ class ResearchEngine {
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             val timeframeFactor = when { n % 11 == 0 -> 5; n % 7 == 0 -> 3; else -> 1 }
             val researchCandles = if (timeframeFactor == 1) candles else FeatureEngine.aggregate(candles, timeframeFactor)
-            if (!parallelPreflight(researchCandles, timeframeFactor)) return@repeat
+            if (researchCandles.size < 20) return@repeat
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
             currentCoroutineContext().ensureActive()
             val sessionGate = n % 6
@@ -107,8 +113,7 @@ class ResearchEngine {
             val oosSignals = signals.filter { it.first >= split }
             currentCoroutineContext().ensureActive()
             checkpoint()
-            val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, binaryPayout)
-            val oosResult = BacktestEngine.binaryResult(researchCandles, oosSignals, expiration, binaryPayout)
+            val (ins, oosResult) = evaluateBacktests(researchCandles, insSignals, oosSignals, expiration)
             val oos = oosResult.metrics
             if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
                 accepted++
