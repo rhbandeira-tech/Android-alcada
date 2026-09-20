@@ -57,4 +57,14 @@ class ResearchEngineTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `orcamento rejeita processadores excessivos`() { ResearchBudget(threads = 257) }
+
+    @Test fun `orcamento de memoria continua deterministico`() = runBlocking {
+        val candles = sampleCandles(120)
+        val budget = ResearchBudget(maxCandidates = 20, threads = 2, memoryMb = 64, minimumTrades = 2, seed = 17)
+        val a = ResearchEngine().discover(candles, budget).toList().last()
+        val b = ResearchEngine().discover(candles, budget).toList().last()
+        assertEquals(a.evaluated, b.evaluated)
+        assertEquals(a.accepted, b.accepted)
+        assertEquals(a.best?.strategy?.id, b.best?.strategy?.id)
+    }
 }
