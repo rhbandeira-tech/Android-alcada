@@ -16,7 +16,8 @@ data class MonteCarloSummary(
 
 object MonteCarlo {
     internal fun nearestRank(values: DoubleArray, p: Double): Double {
-        require(values.isNotEmpty() && p in 0.0..1.0)
+        require(values.isNotEmpty()) { "A amostra de percentil não pode estar vazia." }
+        require(p.isFinite() && p in 0.0..1.0) { "O percentil precisa ficar entre 0 e 1." }
         val sorted = values.sortedArray()
         return sorted[(ceil(sorted.size * p).toInt() - 1).coerceIn(sorted.indices)]
     }
@@ -25,7 +26,7 @@ object MonteCarlo {
      * win/loss clustering that an independent trade bootstrap destroys.
      */
     fun analyze(trades: List<Trade>, simulations: Int = 500, seed: Long = 42, blockSize: Int? = null): MonteCarloSummary {
-        require(simulations > 0)
+        require(simulations in 1..100_000) { "As simulações devem ficar entre 1 e 100.000." }
         require(blockSize == null || blockSize > 0) { "O tamanho do bloco precisa ser positivo." }
         require(trades.all { it.pnl.isFinite() }) { "As operações precisam ter resultados numéricos válidos." }
         if (trades.isEmpty()) return MonteCarloSummary(simulations, 0.0, 0.0, 0.0, 0.0, 1)
