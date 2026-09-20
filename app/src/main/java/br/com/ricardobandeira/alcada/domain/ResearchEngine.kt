@@ -21,6 +21,7 @@ class ResearchEngine {
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
+        require(budget.maxCandidates <= 1_000_000) { "O orçamento máximo é de 1.000.000 de candidatos por pesquisa." }
         val binaryPayout = payout
         val availableProcessors = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
         val workerCount = budget.threads.coerceIn(1, availableProcessors)
