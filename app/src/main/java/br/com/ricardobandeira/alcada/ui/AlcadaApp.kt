@@ -413,6 +413,10 @@ private fun StrategyCard(strategy: StrategyEntity, rank: Int? = null, champion: 
             }
             data.getOrNull(12)?.takeIf { it.isNotBlank() }?.let { encoded ->
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                Text("Como configurar no gráfico", fontWeight = FontWeight.SemiBold, color = Analytic)
+                Text("1. Abra " + strategy.symbol + " no período de " + (data.getOrNull(10) ?: "—") + " min.", style = MaterialTheme.typography.bodySmall)
+                Text("2. Direção: " + directionLabel(data.getOrNull(9)) + ". " + if (strategy.market == "BINARY_OPTIONS") "Use expiração de " + (data.getOrNull(11) ?: "—") + " vela(s)." else "Configure as saídas descritas pela estratégia.", style = MaterialTheme.typography.bodySmall)
+                Text("3. Só considere o sinal quando todas as condições abaixo coincidirem.", style = MaterialTheme.typography.bodySmall)
                 Text("Regras da estratégia", fontWeight = FontWeight.SemiBold)
                 encoded.split('&').take(4).forEach { rule ->
                     Text("• " + ruleDescription(rule), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
