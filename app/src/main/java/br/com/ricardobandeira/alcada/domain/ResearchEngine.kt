@@ -6,11 +6,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import java.util.Random
 
 data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: EvaluatedStrategy?, val leaders: List<EvaluatedStrategy> = emptyList(), val finished: Boolean = false)
