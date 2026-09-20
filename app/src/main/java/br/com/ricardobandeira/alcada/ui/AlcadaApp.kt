@@ -384,8 +384,15 @@ private fun HistoryBacktest(backtest: BacktestEntity) {
 private fun pct(value: String?) = value?.toDoubleOrNull()?.let(::pct) ?: "—"
 private val brLocale = Locale("pt", "BR")
 private fun pct(value: Double): String = NumberFormat.getPercentInstance(brLocale).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }.format(value)
-private fun number(value: Double): String = NumberFormat.getNumberInstance(brLocale).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }.format(value)
+private fun number(value: Double): String = if (!value.isFinite()) "—" else NumberFormat.getNumberInstance(brLocale).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }.format(value)
 private fun date(value: Long) = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, brLocale).format(Date(value))
+private fun directionLabel(value: String?): String = when (value) {
+    "CALL" -> "CALL (alta)"
+    "PUT" -> "PUT (baixa)"
+    "LONG" -> "Compra"
+    "SHORT" -> "Venda"
+    else -> "Direção não informada"
+}
 private fun marketLabel(value: Any?): String = when (value?.toString()) {
     "BINARY_OPTIONS" -> "Opções binárias"
     "FOREX" -> "Forex"
