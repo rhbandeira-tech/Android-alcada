@@ -58,7 +58,13 @@ data class BacktestResult(
     val equity: List<Double>,
     val drawdown: List<Double>,
     val rollingWinRate: List<Double>
-)
+) {
+    init {
+        require(metrics.trades == trades.size) { "A quantidade de operações não corresponde às métricas." }
+        require(equity.size == trades.size && drawdown.size == trades.size && rollingWinRate.size == trades.size) { "As séries do teste histórico estão inconsistentes." }
+        require(equity.all { it.isFinite() } && drawdown.all { it.isFinite() && it >= 0.0 } && rollingWinRate.all { it.isFinite() && it in 0.0..1.0 }) { "As séries do teste histórico contêm valores inválidos." }
+    }
+}
 data class BacktestMetrics(
     val trades: Int, val wins: Int, val winRate: Double, val netProfit: Double, val profitFactor: Double,
     val expectancy: Double, val maxDrawdown: Double, val breakEvenWinRate: Double? = null
