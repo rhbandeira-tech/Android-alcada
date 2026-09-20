@@ -259,7 +259,7 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
         BarChart("Desempenho por horário (UTC)", ChartAnalytics.performanceByHour(result.trades))
         BarChart("Desempenho por dia", ChartAnalytics.performanceByDay(result.trades))
         analysis?.let {
-            BarChart("Mapa de desempenho: dia × hora", it.heatmap)
+            HeatmapCard(it.heatmap)
             BarChart("Dentro da amostra × fora da amostra", it.isOos)
             BarChart("Período gráfico × expiração", it.timeframeExpiration)
             it.monteCarlo?.let { mc ->
@@ -271,6 +271,27 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
             }
             BarChart("Desempenho por ativo", it.assets)
             BarChart("Proporção do pavio × movimento futuro", it.wick)
+        }
+    }
+}
+
+@Composable
+private fun HeatmapCard(values: List<Bucket>) {
+    ChartCard("Mapa de desempenho: dia × hora") {
+        if (values.isEmpty()) Text("Amostra insuficiente", color = Pending) else {
+            values.chunked(6).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    row.forEach { bucket ->
+                        Surface(Modifier.weight(1f), shape = RoundedCornerShape(6.dp), color = if (bucket.value >= 0) Positive.copy(alpha=.22f) else Negative.copy(alpha=.22f)) {
+                            Column(Modifier.padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(bucket.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                Text(number(bucket.value), style = MaterialTheme.typography.labelSmall, color = if (bucket.value >= 0) Positive else Negative)
+                            }
+                        }
+                    }
+                    repeat(6 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
         }
     }
 }
