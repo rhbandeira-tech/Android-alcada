@@ -151,6 +151,21 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                 FilterChip(selected = profile == key, onClick = { profile = key }, label = { Text(if (key == "TODOS") "Todos os perfis" else profileLabel(key)) })
             }
         }
+        if (filtered.size >= 2) {
+            val first = filtered[0].definitionJson.split('|')
+            val second = filtered[1].definitionJson.split('|')
+            val label = when (sort) { "FORA" -> "fora da amostra"; "FATOR" -> "fator de lucro"; "RESULTADO" -> "resultado esperado"; else -> "robustez" }
+            fun score(data: List<String>): Double = when (sort) { "FORA" -> data.getOrNull(2)?.toDoubleOrNull(); "FATOR" -> data.getOrNull(3)?.toDoubleOrNull(); "RESULTADO" -> data.getOrNull(4)?.toDoubleOrNull(); else -> data.getOrNull(6)?.toDoubleOrNull() } ?: Double.NaN
+            val delta = score(first) - score(second)
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f))) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Comparação rápida", fontWeight = FontWeight.Bold)
+                    Text("1º ${filtered[0].name} × 2º ${filtered[1].name}", style = MaterialTheme.typography.bodySmall)
+                    Text("$label: ${number(score(first))} × ${number(score(second))} • diferença ${number(delta)}", style = MaterialTheme.typography.bodySmall, color = Analytic)
+                    Text("Compare também queda máxima, evidência fora da amostra e estabilidade temporal antes de interpretar a liderança.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         val profileOrder = listOf("CONSERVATIVE", "MODERATE", "AGGRESSIVE", "EXPERIMENTAL")
         filtered.groupBy { it.profile }.entries.sortedBy { profileOrder.indexOf(it.key).let { index -> if (index < 0) Int.MAX_VALUE else index } }.forEach { entry ->
             val profileItems = entry.value
