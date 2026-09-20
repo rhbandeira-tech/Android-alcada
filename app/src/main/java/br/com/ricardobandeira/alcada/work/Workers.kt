@@ -15,8 +15,12 @@ class RawDataCleanupWorker(context: Context, params: WorkerParameters) : Corouti
         return try {
             val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)
             db.dao().expiredDatasets(cutoff).forEach { dataset ->
-                dataset.rawPath?.let { File(it).takeIf(File::exists)?.delete() }
-                db.dao().rawDataDeleted(dataset.id)
+                val raw = dataset.rawPath?.let(::File)
+                if (raw == null || !raw.exists() || raw.delete()) {
+                    db.dao().rawDataDeleted(dataset.id)
+                } else {
+                    return Result.retry()
+                }
             }
             Result.success()
         } catch (_: Exception) { Result.retry() } finally { db.close() }
