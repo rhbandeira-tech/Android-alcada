@@ -26,6 +26,20 @@ object FeatureEngine {
         }.average()
     }
 
+    fun candleColorSequence(candles: List<Candle>, endExclusive: Int = candles.size, maxLength: Int = 8): Int {
+        require(maxLength > 0 && endExclusive in 1..candles.size)
+        val last = candles[endExclusive - 1]
+        val direction = last.close.compareTo(last.open)
+        if (direction == 0) return 0
+        var length = 0
+        for (index in endExclusive - 1 downTo maxOf(0, endExclusive - maxLength)) {
+            val candle = candles[index]
+            if (candle.close.compareTo(candle.open) != direction) break
+            length++
+        }
+        return if (direction > 0) length else -length
+    }
+
     fun supportResistanceDistance(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Pair<Double, Double> {
         require(period > 0 && endExclusive in 1..candles.size)
         val start = maxOf(0, endExclusive - period)
