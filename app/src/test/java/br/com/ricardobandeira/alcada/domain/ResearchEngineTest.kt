@@ -51,4 +51,10 @@ class ResearchEngineTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `orcamento rejeita memoria excessiva`() { ResearchBudget(memoryMb = 16_385) }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `orcamento rejeita minimo de operacoes excessivo`() { ResearchBudget(minimumTrades = 100_001) }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `orcamento rejeita processadores excessivos`() { ResearchBudget(threads = 257) }
 }
