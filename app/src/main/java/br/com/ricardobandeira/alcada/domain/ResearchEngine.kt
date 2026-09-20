@@ -112,6 +112,10 @@ class ResearchEngine {
                 }
                 val stabilityPenalty = (1.0 / (1.0 + regimeDispersion)).coerceIn(0.0, 1.0)
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .45 + stability * .30 + stabilityPenalty * .15 + sampleFactor * .10).coerceIn(0.0, 1.0)
+                currentCoroutineContext().ensureActive()
+                val monteCarlo = MonteCarlo.analyze(oos.tradeList, simulations = 200, seed = budget.seed + n, blockSize = null)
+                val mcPenalty = if (monteCarlo.p05NetProfit > 0.0) 1.0 else .75
+                val adjustedRobustness = (robustness * mcPenalty).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(java.util.Locale.US, ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", timeframeFactor, direction, listOf(
                         EntryRule("wickBodyRatio", ">=", ratio),
@@ -122,9 +126,9 @@ class ResearchEngine {
                     strategy = strategy,
                     metrics = ins,
                     oosWinRate = oos.winRate,
-                    robustness = robustness,
-                    status = if (robustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
-                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5 || regimeDispersion > 2.0,
+                    robustness = adjustedRobustness,
+                    status = if (adjustedRobustness >= .65 && oos.winRate > (ins.breakEvenWinRate ?: 1.0)) ValidationStatus.VALIDATED else ValidationStatus.FRAGILE,
+                    overfitWarning = gap > .15 || oos.trades < budget.minimumTrades || oos.profitFactor <= 1.0 || stability < .5 || regimeDispersion > 2.0 || monteCarlo.p05NetProfit <= 0.0,
                     oosTrades = oos.trades,
                     oosExpectancy = oos.expectancy,
                     oosProfitFactor = oos.profitFactor,
