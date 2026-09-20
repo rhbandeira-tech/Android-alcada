@@ -294,8 +294,29 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 color = if (data.getOrNull(8) == "true") Negative else Positive,
             )
             if (data.getOrNull(8) == "true") Text("Alerta: sinais de fragilidade ou sobreajuste.", color = Negative)
+            data.getOrNull(12)?.takeIf { it.isNotBlank() }?.let { encoded ->
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                Text("Regras da estratégia", fontWeight = FontWeight.SemiBold)
+                encoded.split('&').take(4).forEach { rule ->
+                    Text("• " + ruleDescription(rule), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text("Desempenho histórico não garante resultados futuros. A validação fora da amostra reduz, mas não elimina, o risco de sobreajuste.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
+}
+
+private fun ruleDescription(encoded: String): String {
+    val parts = encoded.split(':')
+    val feature = when (parts.getOrNull(0)) {
+        "wickBodyRatio" -> "pavio/corpo"
+        "bodyRangeRatio" -> "corpo/amplitude"
+        "closeLocation" -> "posição do fechamento"
+        else -> "condição quantitativa"
+    }
+    val operator = when (parts.getOrNull(1)) { ">=" -> "maior ou igual a"; "<=" -> "menor ou igual a"; ">" -> "maior que"; "<" -> "menor que"; else -> parts.getOrNull(1).orEmpty() }
+    val threshold = parts.getOrNull(2)?.toDoubleOrNull()?.let { number(it) } ?: parts.getOrNull(2).orEmpty()
+    return "$feature $operator $threshold"
 }
 
 @Composable
