@@ -82,4 +82,14 @@ class BacktestEngineTest {
     fun `saida rejeita limite de velas zero`() {
         ExitRule(bars = 0)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `regra rejeita limite nao finito`() {
+        EntryRule("momentum", ">=", Double.NaN)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `saida rejeita stop negativo`() {
+        ExitRule(stopLoss = -.01, bars = 1)
+    }
 }
