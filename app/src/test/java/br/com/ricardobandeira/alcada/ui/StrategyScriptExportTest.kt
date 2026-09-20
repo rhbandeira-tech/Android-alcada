@@ -82,6 +82,19 @@ class StrategyScriptExportTest {
         assertTrue(script.contains("Alert("))
     }
 
+
+    @Test fun mql5ExportDoesNotPretendBrokerTimeIsUtc() {
+        val strategy = StrategyEntity(
+            id="test-mql-time", researchRunId="run", name="MQL time", market="BINARY_OPTIONS",
+            symbol="EURUSD", profile="EXPERIMENTAL", definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
+        val script = strategyScript(strategy, data, "MQL5")
+        assertFalse(script.contains("MqlDateTime"))
+        assertFalse(script.contains("TimeToStruct"))
+        assertFalse(script.contains("utcHour"))
+    }
     @Test fun exportedWickAndAtrMathMatchesDomainDefinition() {
         val pineWick = scriptRule("wickBodyRatio:>=:2.0", "TradingView", "CALL")!!
         assertTrue(pineWick.contains("high-math.max(open,close)"))
