@@ -133,6 +133,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
         value.strategy.entries.joinToString("&") { rule -> rule.feature + ":" + rule.operator + ":" + rule.threshold },
         value.metrics.breakEvenWinRate ?: Double.NaN,
         value.oosTrades, value.oosExpectancy, value.oosProfitFactor,
-        value.stableForwardFolds, value.forwardFolds
+        value.stableForwardFolds, value.forwardFolds,
+        value.monteCarloP05, value.monteCarloP95Drawdown
     ).joinToString("|")
 }
