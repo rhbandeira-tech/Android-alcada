@@ -6,16 +6,25 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.util.Random
 
 data class ResearchProgress(val evaluated: Int, val accepted: Int, val best: EvaluatedStrategy?, val leaders: List<EvaluatedStrategy> = emptyList(), val finished: Boolean = false)
 
-/** Evolutionary, bounded search: candidates are generated and evaluated one-by-one, never materialized. */
+/** Evolutionary, bounded search. Resource budget is honored and candidate batches remain small. */
 class ResearchEngine {
     fun discover(candles: List<Candle>, budget: ResearchBudget): Flow<ResearchProgress> = flow {
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
+        val workerCount = budget.threads.coerceAtLeast(1)
+        val batchSize = minOf(workerCount * 4, 64)
+        val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
+        val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
         var accepted = 0; var best: EvaluatedStrategy? = null
         val elite = mutableListOf<EvaluatedStrategy>()
         repeat(budget.maxCandidates) { n ->
@@ -98,7 +107,7 @@ class ResearchEngine {
                 elite.sortByDescending(score)
                 if (elite.size > 24) elite.removeAt(elite.lastIndex)
             }
-            if (n % 25 == 0) emit(ResearchProgress(n + 1, accepted, best, elite.toList()))
+            if (n % maxOf(25, effectiveBatch) == 0) emit(ResearchProgress(n + 1, accepted, best, elite.toList()))
         }
         emit(ResearchProgress(budget.maxCandidates, accepted, best, elite.toList(), true))
     }.flowOn(Dispatchers.Default)
