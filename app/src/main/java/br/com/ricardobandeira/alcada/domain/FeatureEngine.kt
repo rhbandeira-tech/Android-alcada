@@ -26,6 +26,16 @@ object FeatureEngine {
         }.average()
     }
 
+    fun sessionHour(epochMillis: Long): Int =
+        java.time.Instant.ofEpochMilli(epochMillis).atZone(java.time.ZoneOffset.UTC).hour
+
+    fun sessionLabel(epochMillis: Long): String = when (sessionHour(epochMillis)) {
+        in 0..6 -> "Ásia"
+        in 7..12 -> "Europa"
+        in 13..20 -> "Américas"
+        else -> "Transição"
+    }
+
     fun candleColorSequence(candles: List<Candle>, endExclusive: Int = candles.size, maxLength: Int = 8): Int {
         require(maxLength > 0 && endExclusive in 1..candles.size)
         val last = candles[endExclusive - 1]
