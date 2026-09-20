@@ -41,33 +41,35 @@ class ResearchEngine {
             else .50 + random.nextDouble() * .35
             val eliteExpiry = parent?.strategy?.exit?.bars
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
+            val timeframeFactor = when { n % 11 == 0 -> 5; n % 7 == 0 -> 3; else -> 1 }
+            val researchCandles = if (timeframeFactor == 1) candles else FeatureEngine.aggregate(candles, timeframeFactor)
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
             currentCoroutineContext().ensureActive()
             val signals = SignalEngine.filteredWickSignals(
-                candles = candles,
+                candles = researchCandles,
                 direction = direction,
                 minimumWickBodyRatio = ratio,
                 maximumBodyRangeRatio = bodyLimit,
                 minimumDirectionalClose = closeLocation,
                 limit = 5_000
             )
-            val split = (candles.size * .7).toInt()
+            val split = (researchCandles.size * .7).toInt()
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
             val insSignals = signals.filter { it.first + expiration < split }
             val oosSignals = signals.filter { it.first > split }
             currentCoroutineContext().ensureActive()
-            val ins = BacktestEngine.binary(candles, insSignals, expiration, .8)
-            val oos = BacktestEngine.binary(candles, oosSignals, expiration, .8)
+            val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, .8)
+            val oos = BacktestEngine.binary(researchCandles, oosSignals, expiration, .8)
             if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
                 accepted++
                 val gap = kotlin.math.abs(ins.winRate - oos.winRate)
                 val sampleFactor = (oos.trades.toDouble() / budget.minimumTrades.coerceAtLeast(1)).coerceAtMost(1.0)
-                val foldSize = candles.size / 4
+                val foldSize = researchCandles.size / 4
                 val forwardTests = (1..3).map { fold ->
                     val start = fold * foldSize
-                    val end = if (fold == 3) candles.size else (fold + 1) * foldSize
+                    val end = if (fold == 3) researchCandles.size else (fold + 1) * foldSize
                     BacktestEngine.binary(
-                        candles,
+                        researchCandles,
                         signals.filter { it.first > start && it.first + expiration < end },
                         expiration,
                         .8
@@ -79,7 +81,7 @@ class ResearchEngine {
                 val stability = stableFolds / forwardTests.size.toDouble()
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .55 + stability * .35 + sampleFactor * .10).coerceIn(0.0, 1.0)
                 val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(java.util.Locale.US, ratio)}×", Market.BINARY_OPTIONS,
-                    "dataset", 1, direction, listOf(
+                    "dataset", timeframeFactor, direction, listOf(
                         EntryRule("wickBodyRatio", ">=", ratio),
                         EntryRule("bodyRangeRatio", "<=", bodyLimit),
                         EntryRule("closeLocation", if (direction == Direction.CALL) ">=" else "<=", if (direction == Direction.CALL) closeLocation else 1.0 - closeLocation)
