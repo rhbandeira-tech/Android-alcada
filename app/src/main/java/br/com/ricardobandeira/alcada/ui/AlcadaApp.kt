@@ -73,8 +73,36 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
     Card(Modifier.width(292.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) { Text(title, color=color, fontWeight=FontWeight.Bold); if(values.isEmpty()) Text("Em validação • sem resultados suficientes", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall) else values.forEach { strategy -> val data=strategy.definitionJson.split('|'); Surface(shape=RoundedCornerShape(12.dp), color=MaterialTheme.colorScheme.surfaceVariant) { Column(Modifier.padding(12.dp)) { Text(strategy.name, fontWeight=FontWeight.Bold); Text("${strategy.symbol} • ${marketLabel(strategy.market)}", style=MaterialTheme.typography.labelSmall); Text("Fora da amostra ${pct(data.getOrNull(2))}  •  robustez ${pct(data.getOrNull(6))}", color=color) } } } } }
 }
 
-@Composable private fun DiscoverScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) { val state by vm.researchState.collectAsState(); val strategies by vm.strategies.collectAsState()
-    LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) { item { Hero("Descobrir padrões", "Pavios, movimento e validação dentro e fora da amostra") }; item { DatasetSelector(datasets, selected, vm::selectDataset) }; item { ActionPanel(state, "Pesquisa local", "2.000 candidatos • análise local • filtro por amostra e fator de lucro", { vm.runResearch() }, vm::cancelResearch) }; if(strategies.isNotEmpty()) { item { SectionTitle("Descobertas persistidas", "Classificação considera robustez e expectativa") }; items(strategies) { StrategyCard(it) } } else item { EmptyState(Icons.Default.AutoGraph, "Ainda sem descobertas", "A busca mantém somente candidatos com amostra mínima e validação OOS.") } }
+@Composable private fun DiscoverScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) {
+    val state by vm.researchState.collectAsState()
+    val strategies by vm.strategies.collectAsState()
+    var intensive by rememberSaveable { mutableStateOf(false) }
+    var candidates by rememberSaveable { mutableFloatStateOf(2_000f) }
+    LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) {
+        item { Hero("Descobrir padrões", "Pavios, movimento e validação dentro e fora da amostra") }
+        item { DatasetSelector(datasets, selected, vm::selectDataset) }
+        item {
+            Card {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Modo Pesquisa Intensiva", fontWeight = FontWeight.Bold)
+                            Text("Usa mais processamento local para ampliar a busca.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = intensive, onCheckedChange = { intensive = it }, enabled = !state.running)
+                    }
+                    Text("Orçamento: ${candidates.toInt()} candidatos")
+                    Slider(candidates, { candidates = it }, valueRange = 500f..10_000f, steps = 18, enabled = !state.running)
+                    if (intensive) Text("Prioriza CPU e memória durante a pesquisa. Você pode cancelar a qualquer momento.", color = Pending, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        item { ActionPanel(state, "Pesquisa local", "${candidates.toInt()} candidatos • validação temporal • busca evolutiva", { vm.runResearch(ResearchOptions(candidates.toInt(), intensive = intensive)) }, vm::cancelResearch) }
+        if(strategies.isNotEmpty()) {
+            item { SectionTitle("Descobertas persistidas", "Classificação considera robustez, expectativa e desempenho fora da amostra") }
+            items(strategies) { StrategyCard(it) }
+        } else item { EmptyState(Icons.Default.AutoGraph, "Ainda sem descobertas", "A busca mantém somente candidatos com amostra mínima e validação fora da amostra.") }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
