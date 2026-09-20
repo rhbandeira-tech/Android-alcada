@@ -87,7 +87,7 @@ object FeatureEngine {
     }
 
     fun volatility(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
-        require(period > 0 && endExclusive in 0..candles.size)
+        require(period > 0 && endExclusive in 0..candles.size) { "Período ou janela de volatilidade inválidos." }
         if (endExclusive <= 1) return 0.0
         val returns = (maxOf(1, endExclusive - period) until endExclusive).mapNotNull { i ->
             val previous = candles[i - 1].close
