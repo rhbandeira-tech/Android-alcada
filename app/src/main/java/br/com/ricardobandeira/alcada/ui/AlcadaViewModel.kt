@@ -3,6 +3,9 @@ package br.com.ricardobandeira.alcada.ui
 import android.app.Application
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.os.BatteryManager
+import android.os.PowerManager
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.ricardobandeira.alcada.AlcadaApplication
@@ -19,6 +22,10 @@ import java.util.UUID
 data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null, val paused: Boolean = false)
 data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
 data class ResearchOptions(val candidates: Int = 2_000, val minimumTrades: Int = 30, val intensive: Boolean = false, val threads: Int? = null, val memoryMb: Int? = null)
+data class DeviceHealth(val batteryPercent: Int? = null, val charging: Boolean = false, val thermalStatus: Int = 0) {
+    val thermalLabel: String get() = when { thermalStatus >= PowerManager.THERMAL_STATUS_SEVERE -> "alto"; thermalStatus >= PowerManager.THERMAL_STATUS_MODERATE -> "moderado"; else -> "normal" }
+}
+
 data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>, val monteCarlo: MonteCarloSummary? = null)
 
 class AlcadaViewModel(application: Application) : AndroidViewModel(application) {
@@ -38,12 +45,23 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     private val _result = MutableStateFlow<BacktestResult?>(null)
     val result = _result.asStateFlow()
     private val _analysis = MutableStateFlow<QuantAnalysis?>(null)
+    private val _deviceHealth = MutableStateFlow(readDeviceHealth())
+    val deviceHealth = _deviceHealth.asStateFlow()
     val analysis = _analysis.asStateFlow()
     private var importJob: Job? = null
     private var researchJob: Job? = null
     private var lastResearchOptions: ResearchOptions? = null
     private var researchPaused = false
     private var backtestJob: Job? = null
+    private fun readDeviceHealth(): DeviceHealth {
+        val app = getApplication<Application>()
+        val battery = app.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val power = app.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val percent = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).takeIf { it in 0..100 }
+        val charging = battery.isCharging
+        return DeviceHealth(percent, charging, power.currentThermalStatus)
+    }
+    fun refreshDeviceHealth() { _deviceHealth.value = readDeviceHealth() }
     private fun friendlyError(error: Throwable): String {
         val message = error.message.orEmpty()
         return when {
@@ -150,6 +168,10 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun runResearch(options: ResearchOptions = ResearchOptions()) {
+        refreshDeviceHealth()
+        val health = _deviceHealth.value
+        if (options.intensive && health.thermalStatus >= PowerManager.THERMAL_STATUS_SEVERE) return failResearch("O aparelho está muito quente. Aguarde a temperatura baixar antes da pesquisa intensiva.")
+        if (options.intensive && !health.charging && (health.batteryPercent ?: 100) < 20) return failResearch("A bateria está abaixo de 20%. Conecte o carregador ou use o modo normal.")
         lastResearchOptions = options
         if (options.candidates !in 100..100_000) return failResearch("Escolha entre 100 e 100.000 candidatos.")
         if (options.minimumTrades !in 5..10_000) return failResearch("O mínimo de operações deve ficar entre 5 e 10.000.")
