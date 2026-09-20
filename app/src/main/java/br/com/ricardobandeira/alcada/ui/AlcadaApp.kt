@@ -483,9 +483,9 @@ private fun scriptRule(encoded: String, language: String, direction: String? = n
     val value = numericValue.toString()
     if (language == "TradingView" && feature == "sessionUtc") {
         return when (numericValue.toInt()) {
-            1 -> "(hour(time, \\"UTC\\") >= 0 and hour(time, \\"UTC\\") <= 6)"
-            2 -> "(hour(time, \\"UTC\\") >= 7 and hour(time, \\"UTC\\") <= 12)"
-            3 -> "(hour(time, \\"UTC\\") >= 13 and hour(time, \\"UTC\\") <= 20)"
+            1 -> "(hour(time, \"UTC\") >= 0 and hour(time, \"UTC\") <= 6)"
+            2 -> "(hour(time, \"UTC\") >= 7 and hour(time, \"UTC\") <= 12)"
+            3 -> "(hour(time, \"UTC\") >= 13 and hour(time, \"UTC\") <= 20)"
             else -> null
         }
     }
