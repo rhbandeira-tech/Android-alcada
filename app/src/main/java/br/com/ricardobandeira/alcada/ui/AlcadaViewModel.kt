@@ -10,6 +10,7 @@ import br.com.ricardobandeira.alcada.data.*
 import br.com.ricardobandeira.alcada.domain.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
