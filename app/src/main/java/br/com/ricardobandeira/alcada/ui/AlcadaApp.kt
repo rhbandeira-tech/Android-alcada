@@ -24,7 +24,9 @@ import br.com.ricardobandeira.alcada.data.*
 import br.com.ricardobandeira.alcada.domain.*
 import br.com.ricardobandeira.alcada.ui.theme.*
 import java.text.DateFormat
+import java.text.NumberFormat
 import java.util.Date
+import java.util.Locale
 import kotlin.math.max
 
 private enum class Destination(val label: String, val icon: ImageVector) {
@@ -64,8 +66,8 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
     }
 }
 
-@Composable private fun ProfilePanel(profile: Profile, values: List<StrategyEntity>) { val color = when(profile){ Profile.CONSERVATIVE->Positive; Profile.MODERATE->Analytic; Profile.AGGRESSIVE->Pending; Profile.EXPERIMENTAL->Negative }; val title=profile.name.lowercase().replaceFirstChar { it.uppercase() }
-    Card(Modifier.width(292.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) { Text(title, color=color, fontWeight=FontWeight.Bold); if(values.isEmpty()) Text("Em validação • sem resultados suficientes", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall) else values.forEach { strategy -> val data=strategy.definitionJson.split('|'); Surface(shape=RoundedCornerShape(12.dp), color=MaterialTheme.colorScheme.surfaceVariant) { Column(Modifier.padding(12.dp)) { Text(strategy.name, fontWeight=FontWeight.Bold); Text("${strategy.symbol} • ${strategy.market}", style=MaterialTheme.typography.labelSmall); Text("OOS ${pct(data.getOrNull(2))}  •  robustez ${pct(data.getOrNull(6))}", color=color) } } } } }
+@Composable private fun ProfilePanel(profile: Profile, values: List<StrategyEntity>) { val color = when(profile){ Profile.CONSERVATIVE->Positive; Profile.MODERATE->Analytic; Profile.AGGRESSIVE->Pending; Profile.EXPERIMENTAL->Negative }; val title=profileLabel(profile)
+    Card(Modifier.width(292.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) { Text(title, color=color, fontWeight=FontWeight.Bold); if(values.isEmpty()) Text("Em validação • sem resultados suficientes", color=MaterialTheme.colorScheme.onSurfaceVariant, style=MaterialTheme.typography.bodySmall) else values.forEach { strategy -> val data=strategy.definitionJson.split('|'); Surface(shape=RoundedCornerShape(12.dp), color=MaterialTheme.colorScheme.surfaceVariant) { Column(Modifier.padding(12.dp)) { Text(strategy.name, fontWeight=FontWeight.Bold); Text("${strategy.symbol} • ${marketLabel(strategy.market)}", style=MaterialTheme.typography.labelSmall); Text("Fora da amostra ${pct(data.getOrNull(2))}  •  robustez ${pct(data.getOrNull(6))}", color=color) } } } } }
 }
 
 @Composable private fun DiscoverScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) { val state by vm.researchState.collectAsState(); val strategies by vm.strategies.collectAsState()
@@ -74,11 +76,11 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun BacktestScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) { var market by rememberSaveable { mutableStateOf(Market.BINARY_OPTIONS) }; var payout by rememberSaveable { mutableFloatStateOf(.8f) }; var expiration by rememberSaveable { mutableFloatStateOf(3f) }; val state by vm.backtestState.collectAsState(); val result by vm.result.collectAsState(); val analysis by vm.analysis.collectAsState()
-    LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) { item { Hero("Teste histórico", "Sinais por assimetria de pavios • sem execução de ordens") }; item { DatasetSelector(datasets, selected, vm::selectDataset) }; item { Card { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) { SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) { Market.entries.take(2).forEachIndexed { i, item -> SegmentedButton(market==item,{market=item},SegmentedButtonDefaults.itemShape(i,2)){Text(if(item==Market.BINARY_OPTIONS) "Opções" else "Forex")}} }; if(market==Market.BINARY_OPTIONS){ Text("Retorno ${(payout*100).toInt()}% • taxa mínima para equilíbrio ${pct(1.0/(1+payout))}"); Slider(payout,{payout=it}, valueRange=.5f..1f); Text("Expiração ${expiration.toInt()} velas"); Slider(expiration,{expiration=it},valueRange=1f..10f,steps=8) } else Text("Forex: limite de perda (SL) 0,002 • objetivo de ganho (TP) 0,004 • proteção móvel 0,0015 • saída em 20 velas") } } }; item { ActionPanel(state,"Executar teste","Custos, retorno e direção são calculados pelo aplicativo",{ vm.runBacktest(BacktestOptions(market=market, expiration=expiration.toInt(), payout=payout.toDouble())) },vm::cancelBacktest) }; result?.let { value -> item { Metrics(value.metrics) }; item { ResultCharts(value, analysis) } } ?: item { EmptyState(Icons.Default.QueryStats,"Sem resultado nesta sessão","Execute o backtest; o resultado também será salvo no histórico.") } }
+    LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) { item { Hero("Teste histórico", "Sinais por assimetria de pavios • sem execução de ordens") }; item { DatasetSelector(datasets, selected, vm::selectDataset) }; item { Card { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) { SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) { Market.entries.take(2).forEachIndexed { i, item -> SegmentedButton(market==item,{market=item},SegmentedButtonDefaults.itemShape(i,2)){Text(if(item==Market.BINARY_OPTIONS) "Opções" else "Forex")}} }; if(market==Market.BINARY_OPTIONS){ Text("Retorno ${(payout*100).toInt()}% • taxa mínima para equilíbrio ${pct(1.0/(1+payout))}"); Slider(payout,{payout=it}, valueRange=.5f..1f); Text("Expiração ${expiration.toInt()} velas"); Slider(expiration,{expiration=it},valueRange=1f..10f,steps=8) } else Text("Forex: limite de perda (SL) 0,002 • objetivo de ganho (TP) 0,004 • proteção móvel 0,0015 • saída em 20 velas") } } }; item { ActionPanel(state,"Executar teste","Custos, retorno e direção são calculados pelo aplicativo",{ vm.runBacktest(BacktestOptions(market=market, expiration=expiration.toInt(), payout=payout.toDouble())) },vm::cancelBacktest) }; result?.let { value -> item { Metrics(value.metrics) }; item { ResultCharts(value, analysis) } } ?: item { EmptyState(Icons.Default.QueryStats,"Sem resultado nesta sessão","Execute o teste; o resultado também será salvo no histórico.") } }
 }
 
 @Composable private fun MoreScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) { val launcher=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){ uris -> vm.importFiles(uris) }; val importState by vm.importState.collectAsState(); val backtests by vm.backtests.collectAsState(); val runs by vm.runs.collectAsState()
-    LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) { item { Hero("Dados e histórico","Tudo permanece no dispositivo") }; item { SectionTitle("Dados locais","Selecione um ou vários arquivos CSV/ZIP. Os dados são processados somente no aparelho.") }; item { Button(onClick={launcher.launch(arrayOf("text/csv","text/comma-separated-values","application/zip","application/x-zip-compressed","text/plain"))},Modifier.fillMaxWidth(), enabled=!importState.running){Icon(Icons.Default.UploadFile,null);Spacer(Modifier.width(8.dp));Text("Selecionar CSV ou ZIP")}; if(importState.running){ LinearProgressIndicator(progress={importState.progress},modifier=Modifier.fillMaxWidth()); OutlinedButton(onClick=vm::cancelImport){Text("Cancelar importação")} }; Status(importState) }; items(datasets){ d -> DatasetRow(d,d.id==selected){vm.selectDataset(d.id)} }; item { SectionTitle("Histórico","Resultados persistem após a limpeza do cache bruto") }; if(backtests.isEmpty()&&runs.isEmpty()) item { EmptyState(Icons.Default.History,"Histórico vazio","Backtests e pesquisas concluídos aparecerão aqui.") }; items(backtests){ HistoryBacktest(it) }; items(runs){ run -> ListItem(headlineContent={Text("Pesquisa ${run.status}")},supportingContent={Text("${run.progress}% • seed ${run.seed} • ${date(run.startedAt)}")},leadingContent={Icon(Icons.Default.Science,null)}) }; item { SectionTitle("Configurações e privacidade","Cálculos locais • cache bruto expira após 7 dias"); Text("Dukascopy e agenda econômica permanecem desativados até um provider confiável ser configurado. Nenhuma ordem real é executada.",color=MaterialTheme.colorScheme.onSurfaceVariant) } }
+    LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) { item { Hero("Dados e histórico","Tudo permanece no dispositivo") }; item { SectionTitle("Dados locais","Selecione um ou vários arquivos CSV/ZIP. Os dados são processados somente no aparelho.") }; item { Button(onClick={launcher.launch(arrayOf("text/csv","text/comma-separated-values","application/zip","application/x-zip-compressed","text/plain"))},Modifier.fillMaxWidth(), enabled=!importState.running){Icon(Icons.Default.UploadFile,null);Spacer(Modifier.width(8.dp));Text("Selecionar CSV ou ZIP")}; if(importState.running){ LinearProgressIndicator(progress={importState.progress},modifier=Modifier.fillMaxWidth()); OutlinedButton(onClick=vm::cancelImport){Text("Cancelar importação")} }; Status(importState) }; items(datasets){ d -> DatasetRow(d,d.id==selected){vm.selectDataset(d.id)} }; item { SectionTitle("Histórico","Resultados persistem após a limpeza do cache bruto") }; if(backtests.isEmpty()&&runs.isEmpty()) item { EmptyState(Icons.Default.History,"Histórico vazio","Backtests e pesquisas concluídos aparecerão aqui.") }; items(backtests){ HistoryBacktest(it) }; items(runs){ run -> ListItem(headlineContent={Text("Pesquisa ${statusLabel(run.status)}")},supportingContent={Text("${run.progress}% • semente ${run.seed} • ${date(run.startedAt)}")},leadingContent={Icon(Icons.Default.Science,null)}) }; item { SectionTitle("Configurações e privacidade","Cálculos locais • cache bruto expira após 7 dias"); Text("Dukascopy e agenda econômica permanecem desativados até uma fonte confiável ser configurada. Nenhuma ordem real é executada.",color=MaterialTheme.colorScheme.onSurfaceVariant) } }
 }
 
 @Composable
@@ -156,8 +158,8 @@ private fun Status(state: OperationState) {
 private fun Metrics(metrics: BacktestMetrics) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Metric(pct(metrics.winRate), "taxa de acerto", Analytic, Modifier.weight(1f))
-        Metric("%.2f".format(metrics.netProfit), "resultado", if (metrics.netProfit >= 0) Positive else Negative, Modifier.weight(1f))
-        Metric("%.2f".format(metrics.maxDrawdown), "queda máxima", Negative, Modifier.weight(1f))
+        Metric(number(metrics.netProfit), "resultado", if (metrics.netProfit >= 0) Positive else Negative, Modifier.weight(1f))
+        Metric(number(metrics.maxDrawdown), "queda máxima", Negative, Modifier.weight(1f))
     }
 }
 
@@ -232,14 +234,14 @@ private fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit
 @Composable
 private fun StrategyCard(strategy: StrategyEntity) {
     val data = strategy.definitionJson.split('|')
-    val profitFactor = data.getOrNull(3)?.toDoubleOrNull()?.let { "%.2f".format(it) } ?: "—"
+    val profitFactor = data.getOrNull(3)?.toDoubleOrNull()?.let(::number) ?: "—"
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(strategy.name, fontWeight = FontWeight.Bold)
-                Text(strategy.profile.lowercase(), color = Analytic)
+                Text(profileLabel(strategy.profile), color = Analytic)
             }
-            Text("${strategy.symbol} • ${strategy.market}")
+            Text("${strategy.symbol} • ${marketLabel(strategy.market)}")
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Dentro ${pct(data.getOrNull(1))}")
                 Text("Fora ${pct(data.getOrNull(2))}")
@@ -256,9 +258,9 @@ private fun StrategyCard(strategy: StrategyEntity) {
 @Composable
 private fun HistoryBacktest(backtest: BacktestEntity) {
     val data = backtest.metricsJson.split('|')
-    val result = data.getOrNull(3)?.toDoubleOrNull()?.let { "%.2f".format(it) } ?: "—"
+    val result = data.getOrNull(3)?.toDoubleOrNull()?.let(::number) ?: "—"
     ListItem(
-        headlineContent = { Text("Teste histórico ${backtest.market}") },
+        headlineContent = { Text("Teste histórico ${marketLabel(backtest.market)}") },
         supportingContent = { Text("${date(backtest.createdAt)} • ${data.getOrNull(0) ?: 0} operações • resultado $result") },
         leadingContent = { Icon(Icons.Default.ShowChart, null) },
     )
@@ -269,5 +271,28 @@ private fun HistoryBacktest(backtest: BacktestEntity) {
 @Composable private fun Metric(value: String, label: String, color: Color, modifier: Modifier = Modifier) { Card(modifier) { Column(Modifier.padding(12.dp)) { Text(value, color = color, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge); Text(label, style = MaterialTheme.typography.labelSmall) } } }
 @Composable private fun EmptyState(icon: ImageVector, title: String, body: String) { Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) { Icon(icon, null, tint = Analytic); Text(title, fontWeight = FontWeight.Bold); Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
 private fun pct(value: String?) = value?.toDoubleOrNull()?.let(::pct) ?: "—"
-private fun pct(value: Double) = "%.1f%%".format(value * 100)
-private fun date(value: Long) = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(value))
+private val brLocale = Locale("pt", "BR")
+private fun pct(value: Double): String = NumberFormat.getPercentInstance(brLocale).apply { minimumFractionDigits = 1; maximumFractionDigits = 1 }.format(value)
+private fun number(value: Double): String = NumberFormat.getNumberInstance(brLocale).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }.format(value)
+private fun date(value: Long) = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, brLocale).format(Date(value))
+private fun marketLabel(value: Any?): String = when (value?.toString()) {
+    "BINARY_OPTIONS" -> "Opções binárias"
+    "FOREX" -> "Forex"
+    "CRYPTO" -> "Cripto"
+    else -> value?.toString() ?: "—"
+}
+private fun profileLabel(value: Any?): String = when (value?.toString()) {
+    "CONSERVATIVE" -> "Conservador"
+    "MODERATE" -> "Moderado"
+    "AGGRESSIVE" -> "Agressivo"
+    "EXPERIMENTAL" -> "Experimental"
+    else -> value?.toString() ?: "—"
+}
+private fun statusLabel(value: Any?): String = when (value?.toString()) {
+    "RUNNING" -> "em andamento"
+    "COMPLETED" -> "concluída"
+    "CANCELLED", "CANCELED" -> "cancelada"
+    "FAILED" -> "com falha"
+    "PENDING" -> "pendente"
+    else -> value?.toString()?.lowercase()?.replace('_', ' ') ?: "—"
+}
