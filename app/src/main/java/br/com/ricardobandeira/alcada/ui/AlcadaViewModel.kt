@@ -88,6 +88,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             runCatching {
                 val candles = repository.loadCandles(id)
                 _backtestState.value = OperationState(true, .35f, "Calculando sinais sem look-ahead…")
+                val result = withContext(Dispatchers.Default) {
                 val direction = if (options.market == Market.BINARY_OPTIONS) options.direction else if (options.direction == Direction.PUT || options.direction == Direction.SHORT) Direction.SHORT else Direction.LONG
                 val signals = SignalEngine.wickSignals(candles, direction)
                 val result = if (options.market == Market.BINARY_OPTIONS) BacktestEngine.binaryResult(candles, signals, options.expiration, options.payout)
