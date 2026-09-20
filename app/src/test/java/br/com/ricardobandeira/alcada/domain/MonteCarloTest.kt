@@ -55,4 +55,11 @@ class MonteCarloTest {
     fun `rejeita resultado nao finito`() {
         MonteCarlo.analyze(listOf(Trade(1, 2, Double.NaN, false)))
     }
+
+    @Test fun `percentil usa regra exata de posto mais proximo`() {
+        val values = doubleArrayOf(10.0, 1.0, 8.0, 3.0, 6.0)
+        assertEquals(1.0, MonteCarlo.nearestRank(values, .05), 0.0)
+        assertEquals(6.0, MonteCarlo.nearestRank(values, .50), 0.0)
+        assertEquals(10.0, MonteCarlo.nearestRank(values, .95), 0.0)
+    }
 }
