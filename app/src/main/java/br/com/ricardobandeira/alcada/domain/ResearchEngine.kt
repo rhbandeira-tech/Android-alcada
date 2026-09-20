@@ -43,6 +43,7 @@ class ResearchEngine {
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             val timeframeFactor = when { n % 11 == 0 -> 5; n % 7 == 0 -> 3; else -> 1 }
             val researchCandles = if (timeframeFactor == 1) candles else FeatureEngine.aggregate(candles, timeframeFactor)
+            if (researchCandles.size < 20) return@repeat
             // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
             currentCoroutineContext().ensureActive()
             val signals = SignalEngine.filteredWickSignals(
