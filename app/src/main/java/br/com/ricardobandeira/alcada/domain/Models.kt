@@ -3,7 +3,12 @@ package br.com.ricardobandeira.alcada.domain
 import kotlin.math.abs
 
 data class Candle(val epochMillis: Long, val open: Double, val high: Double, val low: Double, val close: Double, val volume: Double = 0.0, val spread: Double = 0.0) {
-    init { require(high >= maxOf(open, close, low) && low <= minOf(open, close, high)) { "OHLC inválido" } }
+    init {
+        require(listOf(open, high, low, close, volume, spread).all { it.isFinite() }) { "OHLC contém valor não finito." }
+        require(high >= maxOf(open, close, low) && low <= minOf(open, close, high)) { "OHLC inválido" }
+        require(volume >= 0.0) { "O volume não pode ser negativo." }
+        require(spread >= 0.0) { "O spread não pode ser negativo." }
+    }
     val body get() = abs(close - open)
     val range get() = high - low
     val upperWick get() = high - maxOf(open, close)
