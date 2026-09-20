@@ -79,7 +79,9 @@ object BacktestEngine {
             "upperWick" -> feature.upperWick
             "lowerWick" -> feature.lowerWick
             "momentum" -> feature.momentum
-            "range" -> feature.range\n            "bodyRangeRatio" -> feature.bodyRangeRatio\n            "closeLocation" -> feature.closeLocation
+            "range" -> feature.range
+            "bodyRangeRatio" -> feature.bodyRangeRatio
+            "closeLocation" -> feature.closeLocation
             else -> return false
         }
         return when (rule.operator) { ">" -> value > rule.threshold; ">=" -> value >= rule.threshold; "<" -> value < rule.threshold; "<=" -> value <= rule.threshold; else -> false }
