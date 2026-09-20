@@ -27,4 +27,10 @@ class SignalEngineTest {
         assertEquals(listOf(1), accepted.map { it.first })
         assertTrue(rejected.isEmpty())
     }
+
+    @Test fun `bases curtas nao geram sinal nem falham`() {
+        val one = listOf(Candle(0, 10.0, 11.0, 9.0, 10.0))
+        assertTrue(SignalEngine.wickSignals(one, Direction.CALL).isEmpty())
+        assertTrue(SignalEngine.filteredWickSignals(one, Direction.PUT).isEmpty())
+    }
 }
