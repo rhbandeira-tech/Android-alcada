@@ -12,7 +12,7 @@ object BacktestEngine {
         require(payout.isFinite() && payout >= .01 && payout <= 2.0) { "O retorno precisa ficar entre 1% e 200%." }
         require(signals.all { it.second == Direction.CALL || it.second == Direction.PUT }) { "Opções binárias aceitam apenas CALL ou PUT." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
-        val orderedSignals = signals.sortedBy { it.first }
+        val orderedSignals = signals.distinct().sortedBy { it.first }
         val trades = orderedSignals.mapNotNull { (i, direction) ->
             if (i < 0 || i + expirationBars >= candles.size) null else {
                 val delta = candles[i + expirationBars].close - candles[i].close
@@ -34,7 +34,7 @@ object BacktestEngine {
         require(exit.takeProfit == null || (exit.takeProfit.isFinite() && exit.takeProfit > 0.0)) { "O take profit precisa ser positivo." }
         require(exit.trailingStop == null || (exit.trailingStop.isFinite() && exit.trailingStop > 0.0)) { "O trailing stop precisa ser positivo." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
-        val orderedEntries = entries.sortedBy { it.first }
+        val orderedEntries = entries.distinct().sortedBy { it.first }
         val trades = orderedEntries.mapNotNull { (index, direction) ->
             if (index !in 0 until candles.lastIndex || direction !in listOf(Direction.LONG, Direction.SHORT)) return@mapNotNull null
             val entry = candles[index].close
