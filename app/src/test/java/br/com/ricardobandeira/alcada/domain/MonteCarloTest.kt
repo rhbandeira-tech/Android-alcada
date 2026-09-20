@@ -62,4 +62,14 @@ class MonteCarloTest {
         assertEquals(6.0, MonteCarlo.nearestRank(values, .50), 0.0)
         assertEquals(10.0, MonteCarlo.nearestRank(values, .95), 0.0)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `monte carlo rejeita simulacoes excessivas`() {
+        MonteCarlo.analyze(emptyList(), simulations = 100_001)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `percentil rejeita valor nao finito`() {
+        MonteCarlo.nearestRank(doubleArrayOf(1.0), Double.NaN)
+    }
 }
