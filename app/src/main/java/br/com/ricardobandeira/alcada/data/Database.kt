@@ -37,6 +37,7 @@ interface AlcadaDao {
     @Query("UPDATE datasets SET lastUsedAt = :now WHERE id = :id") suspend fun touchDataset(id: String, now: Long)
     @Query("SELECT * FROM datasets WHERE rawPath IS NOT NULL AND lastUsedAt < :cutoff") suspend fun expiredDatasets(cutoff: Long): List<DatasetEntity>
     @Query("UPDATE datasets SET rawPath = NULL WHERE id = :id") suspend fun rawDataDeleted(id: String)
+    @Query("DELETE FROM datasets WHERE id = :id") suspend fun deleteDataset(id: String)
 }
 
 @Database(entities = [ResearchRunEntity::class, StrategyEntity::class, BacktestEntity::class, ValidationResultEntity::class, DatasetEntity::class, EconomicEventEntity::class, SettingEntity::class], version = 2, exportSchema = false)
