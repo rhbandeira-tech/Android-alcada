@@ -114,6 +114,8 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
         value.overfitWarning, value.strategy.direction.name, value.strategy.timeframeMinutes,
         value.strategy.exit.bars ?: 0,
         value.strategy.entries.joinToString("&") { rule -> rule.feature + ":" + rule.operator + ":" + rule.threshold },
-        value.metrics.breakEvenWinRate ?: Double.NaN
+        value.metrics.breakEvenWinRate ?: Double.NaN,
+        value.oosTrades, value.oosExpectancy, value.oosProfitFactor,
+        value.stableForwardFolds, value.forwardFolds
     ).joinToString("|")
 }
