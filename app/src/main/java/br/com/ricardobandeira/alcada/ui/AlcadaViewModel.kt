@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 
 data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null)
+data class ImportUiSummary(val text: String)
 data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
 data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>)
 
@@ -37,21 +38,41 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     val result = _result.asStateFlow()
     private val _analysis = MutableStateFlow<QuantAnalysis?>(null)
     val analysis = _analysis.asStateFlow()
+    private var importJob: Job? = null
     private var researchJob: Job? = null
     private var backtestJob: Job? = null
 
     fun selectDataset(id: String) { _selectedDataset.value = id }
 
-    fun importCsv(uri: Uri) = viewModelScope.launch {
-        _importState.value = OperationState(true, message = "Validando CSV em chunks…")
-        runCatching {
-            val name = getApplication<Application>().contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
-                if (it.moveToFirst()) it.getString(0) else null
-            } ?: "dataset.csv"
-            repository.importCsv(uri, name)
-        }.onSuccess { _selectedDataset.value = it.id; _importState.value = OperationState(message = "${it.rowCount} velas importadas") }
-            .onFailure { _importState.value = OperationState(error = it.message ?: "Falha ao importar CSV") }
+    fun importFiles(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        importJob?.cancel()
+        importJob = viewModelScope.launch {
+            _importState.value = OperationState(true, 0f, "Preparando importação…")
+            runCatching {
+                val resolver = getApplication<Application>().contentResolver
+                val items = uris.map { uri ->
+                    val name = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                        if (it.moveToFirst()) it.getString(0) else null
+                    } ?: "arquivo"
+                    uri to name
+                }
+                repository.importBatch(items) { done, total, name ->
+                    _importState.value = OperationState(true, if (total == 0) 0f else done.toFloat() / total, "Processando: $name")
+                }
+            }.onSuccess { (entity, summary) ->
+                _selectedDataset.value = entity.id
+                val problems = if (summary.issues.isEmpty()) "" else " • ${summary.issues.size} arquivo(s) com problema"
+                _importState.value = OperationState(progress = 1f, message = "${summary.validCandles} velas válidas • ${summary.duplicates} duplicadas • ${summary.csvFiles} CSV(s)$problems")
+            }.onFailure {
+                if (it is kotlinx.coroutines.CancellationException) _importState.value = OperationState(message = "Importação cancelada")
+                else _importState.value = OperationState(error = it.message ?: "Não foi possível importar os arquivos.")
+            }
+        }
     }
+
+    fun cancelImport() { importJob?.cancel() }
+
 
     fun runBacktest(options: BacktestOptions) {
         val id = _selectedDataset.value ?: return failBacktest("Selecione um dataset")
