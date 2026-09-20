@@ -126,6 +126,38 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
     }
 }
 
+@Composable
+private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
+    var sort by rememberSaveable { mutableStateOf("ROBUSTEZ") }
+    var profile by rememberSaveable { mutableStateOf("TODOS") }
+    val filtered = strategies.filter { profile == "TODOS" || it.profile == profile }.sortedByDescending {
+        val d = it.definitionJson.split('|')
+        when (sort) {
+            "FORA" -> d.getOrNull(2)?.toDoubleOrNull()
+            "FATOR" -> d.getOrNull(3)?.toDoubleOrNull()
+            "RESULTADO" -> d.getOrNull(4)?.toDoubleOrNull()
+            else -> d.getOrNull(6)?.toDoubleOrNull()
+        } ?: Double.NEGATIVE_INFINITY
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Ordenar do melhor para o pior", fontWeight = FontWeight.SemiBold)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(listOf("ROBUSTEZ" to "Robustez", "FORA" to "Fora da amostra", "FATOR" to "Fator de lucro", "RESULTADO" to "Resultado esperado")) { pair ->
+                FilterChip(selected = sort == pair.first, onClick = { sort = pair.first }, label = { Text(pair.second) })
+            }
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(listOf("TODOS","CONSERVATIVE","MODERATE","AGGRESSIVE","EXPERIMENTAL")) { key ->
+                FilterChip(selected = profile == key, onClick = { profile = key }, label = { Text(if (key == "TODOS") "Todos os perfis" else profileLabel(key)) })
+            }
+        }
+        filtered.forEachIndexed { index, strategy ->
+            val champion = strategies.filter { it.profile == strategy.profile }.maxByOrNull { it.definitionJson.split('|').getOrNull(6)?.toDoubleOrNull() ?: Double.NEGATIVE_INFINITY }?.id == strategy.id
+            StrategyCard(strategy, index + 1, champion)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun BacktestScreen(vm: AlcadaViewModel, datasets: List<DatasetEntity>, selected: String?) { var market by rememberSaveable { mutableStateOf(Market.BINARY_OPTIONS) }; var payout by rememberSaveable { mutableFloatStateOf(.85f) }; var expiration by rememberSaveable { mutableFloatStateOf(3f) }; val state by vm.backtestState.collectAsState(); val result by vm.result.collectAsState(); val analysis by vm.analysis.collectAsState()
     LazyColumn(contentPadding=PaddingValues(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) { item { Hero("Teste histórico", "Sinais por assimetria de pavios • sem execução de ordens") }; item { DatasetSelector(datasets, selected, vm::selectDataset) }; item { Card { Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) { SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) { Market.entries.take(2).forEachIndexed { i, item -> SegmentedButton(market==item,{market=item},SegmentedButtonDefaults.itemShape(i,2)){Text(if(item==Market.BINARY_OPTIONS) "Opções" else "Forex")}} }; if(market==Market.BINARY_OPTIONS){ Text("Retorno ${(payout*100).toInt()}% • taxa mínima para equilíbrio ${pct(1.0/(1+payout))}"); Slider(payout,{payout=it}, valueRange=.5f..1f); Text("Expiração ${expiration.toInt()} velas"); Slider(expiration,{expiration=it},valueRange=1f..10f,steps=8) } else Text("Forex: limite de perda (SL) 0,002 • objetivo de ganho (TP) 0,004 • proteção móvel 0,0015 • saída em 20 velas") } } }; item { ActionPanel(state,"Executar teste","Custos, retorno e direção são calculados pelo aplicativo",{ vm.runBacktest(BacktestOptions(market=market, expiration=expiration.toInt(), payout=payout.toDouble())) },vm::cancelBacktest) }; result?.let { value -> item { Metrics(value.metrics) }; item { ResultCharts(value, analysis) } } ?: item { EmptyState(Icons.Default.QueryStats,"Sem resultado nesta sessão","Execute o teste; o resultado também será salvo no histórico.") } }
@@ -293,15 +325,15 @@ private fun ChartCard(title: String, content: @Composable ColumnScope.() -> Unit
 }
 
 @Composable
-private fun StrategyCard(strategy: StrategyEntity) {
+private fun StrategyCard(strategy: StrategyEntity, rank: Int? = null, champion: Boolean = false) {
     var details by remember { mutableStateOf(false) }
     val data = strategy.definitionJson.split('|')
     val profitFactor = data.getOrNull(3)?.toDoubleOrNull()?.let(::number) ?: "—"
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(strategy.name, fontWeight = FontWeight.Bold)
-                Text(profileLabel(strategy.profile), color = Analytic)
+                Column { if (champion) Text("CAMPEÃ DO PERFIL", color = Pending, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black); Text((rank?.let { "#$it  " } ?: "") + strategy.name, fontWeight = FontWeight.Bold) }
+                Text(profileLabel(strategy.profile), color = if (champion) Pending else Analytic)
             }
             Text("${strategy.symbol} • ${marketLabel(strategy.market)}")
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
