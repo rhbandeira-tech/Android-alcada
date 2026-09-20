@@ -19,6 +19,8 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
             onProgress(index, sources.size, source.name)
             runCatching {
                 if (source.name.lowercase().endsWith(".zip")) {
+                    var expanded = 0L
+                    var entryCount = 0
                     ZipInputStream(BufferedInputStream(source.open())).use { zip ->
                         while (true) {
                             val entry = zip.nextEntry ?: break
