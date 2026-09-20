@@ -22,11 +22,18 @@ class StrategyScriptExportTest {
         }
     }
 
-    @Test fun advancedRulesNeverSilentlyChangeMeaning() {
-        advanced.forEach { feature ->
-            listOf("MQL5", "Lua").forEach { language ->
-                assertNull("$feature must stay blocked in $language until exact parity exists", scriptRule("$feature:>=:0.5", language, "CALL"))
+    @Test fun implementedAdvancedRulesAreConvertedInAllFormats() {
+        val implemented = advanced.filter { it != "spreadRangeRatio" }
+        implemented.forEach { feature ->
+            listOf("TradingView", "MQL5", "Lua").forEach { language ->
+                assertNotNull("$feature must be converted in $language", scriptRule("$feature:>=:0.5", language, "CALL"))
             }
+        }
+    }
+
+    @Test fun spreadRuleStaysBlockedWithoutPlatformSpreadInput() {
+        listOf("TradingView", "MQL5", "Lua").forEach { language ->
+            assertNull(scriptRule("spreadRangeRatio:<=:0.1", language, "CALL"))
         }
     }
 
@@ -44,7 +51,7 @@ class StrategyScriptExportTest {
             validationStatus="PENDING", definitionJson="", createdAt=0L
         )
         val data = MutableList(13) { "" }
-        data[9] = "CALL"; data[10] = "1"; data[11] = "1"; data[12] = "atrRangeRatio:>=:1.2"
+        data[9] = "CALL"; data[10] = "1"; data[11] = "1"; data[12] = "spreadRangeRatio:<=:0.1"
         val lua = strategyScript(strategy, data, "Lua")
         assertTrue(lua.contains("REVISÃO OBRIGATÓRIA"))
         assertTrue(lua.contains("return (false)"))
