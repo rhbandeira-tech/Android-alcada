@@ -151,6 +151,7 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
                 FilterChip(selected = profile == key, onClick = { profile = key }, label = { Text(if (key == "TODOS") "Todos os perfis" else profileLabel(key)) })
             }
         }
+}
         filtered.groupBy { it.profile }.forEach { entry ->
             val profileItems = entry.value
             Text(profileLabel(entry.key), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Analytic)
