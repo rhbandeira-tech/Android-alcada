@@ -48,7 +48,7 @@ object MonteCarlo {
         profits.sort()
         drawdowns.sort()
         fun percentile(values: DoubleArray, p: Double) =
-            values[ceil(values.lastIndex * p).toInt().coerceIn(values.indices)]
+            values[(ceil(values.size * p).toInt() - 1).coerceIn(values.indices)]
         return MonteCarloSummary(
             simulations,
             percentile(profits, .50),
