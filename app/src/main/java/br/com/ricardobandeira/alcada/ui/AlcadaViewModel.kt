@@ -189,8 +189,9 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             _researchState.value = OperationState(true, 0f, "Preparando pesquisa local…")
             runCatching {
                 val candles = repository.loadCandles(datasetId)
-                ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = options.threads ?: if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = options.memoryMb ?: if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50)))).collect { progress ->
+                ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = options.threads ?: if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = options.memoryMb ?: if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50)))) {
                     while (researchPaused) { kotlinx.coroutines.delay(150); kotlinx.coroutines.currentCoroutineContext().ensureActive() }
+                }.collect { progress ->
                     val ratio = progress.evaluated.toFloat() / budget
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
                     dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
