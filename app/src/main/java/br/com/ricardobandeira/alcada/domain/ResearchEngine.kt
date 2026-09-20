@@ -186,6 +186,8 @@ class ResearchEngine {
             }
             if (n % progressStride == 0) emit(ResearchProgress(n + 1, accepted, best, elite.toList()))
         }
+        currentCoroutineContext().ensureActive()
+        checkpoint()
         emit(ResearchProgress(budget.maxCandidates, accepted, best, elite.toList(), true))
     }.flowOn(Dispatchers.Default)
 }
