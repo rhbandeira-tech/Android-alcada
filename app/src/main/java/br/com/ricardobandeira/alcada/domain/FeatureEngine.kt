@@ -26,6 +26,16 @@ object FeatureEngine {
         }.average()
     }
 
+    fun supportResistanceDistance(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Pair<Double, Double> {
+        require(period > 0 && endExclusive in 1..candles.size)
+        val start = maxOf(0, endExclusive - period)
+        val window = candles.subList(start, endExclusive)
+        val close = candles[endExclusive - 1].close
+        val support = window.minOf { it.low }
+        val resistance = window.maxOf { it.high }
+        return (close - support).coerceAtLeast(0.0) to (resistance - close).coerceAtLeast(0.0)
+    }
+
     fun volatility(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
         require(period > 0 && endExclusive in 0..candles.size)
         if (endExclusive <= 1) return 0.0
