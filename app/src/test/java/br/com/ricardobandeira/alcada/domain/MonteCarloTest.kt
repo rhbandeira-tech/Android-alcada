@@ -31,6 +31,15 @@ class MonteCarloTest {
         assertTrue(result.blockSize in 1..trades.size)
     }
 
+    @Test fun `lucros constantes produzem faixa deterministica`() {
+        val trades = (1L..10L).map { Trade(it, it + 1, .5, true) }
+        val result = MonteCarlo.analyze(trades, 50, 11, blockSize = 3)
+        assertEquals(5.0, result.medianNetProfit, 1e-9)
+        assertEquals(5.0, result.p05NetProfit, 1e-9)
+        assertEquals(0.0, result.p95MaxDrawdown, 1e-9)
+        assertEquals(1.0, result.profitableShare, 1e-9)
+    }
+
     @Test fun `amostra vazia retorna resumo neutro`() {
         val result = MonteCarlo.analyze(emptyList(), 50, 1)
         assertEquals(0.0, result.medianNetProfit, 0.0)
