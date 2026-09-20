@@ -3,16 +3,17 @@ package br.com.ricardobandeira.alcada.domain
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-data class CandleFeatures(val body: Double, val upperWick: Double, val lowerWick: Double, val wickBodyRatio: Double, val wickRangeRatio: Double, val range: Double, val momentum: Double, val gap: Double, val bodyRangeRatio: Double, val closeLocation: Double)
+data class CandleFeatures(val body: Double, val upperWick: Double, val lowerWick: Double, val wickBodyRatio: Double, val wickRangeRatio: Double, val range: Double, val momentum: Double, val gap: Double, val bodyRangeRatio: Double, val closeLocation: Double, val acceleration: Double = 0.0)
 
 object FeatureEngine {
-    fun candle(current: Candle, previous: Candle? = null): CandleFeatures {
+    fun candle(current: Candle, previous: Candle? = null, beforePrevious: Candle? = null): CandleFeatures {
         val epsilon = 1e-12
         val wick = current.upperWick + current.lowerWick
         return CandleFeatures(current.body, current.upperWick, current.lowerWick,
             wick / maxOf(current.body, epsilon), wick / maxOf(current.range, epsilon), current.range,
             previous?.let { current.close - it.close } ?: 0.0, previous?.let { current.open - it.close } ?: 0.0,
-            current.body / maxOf(current.range, epsilon), (current.close - current.low) / maxOf(current.range, epsilon))
+            current.body / maxOf(current.range, epsilon), (current.close - current.low) / maxOf(current.range, epsilon),
+            if (previous != null && beforePrevious != null) (current.close - previous.close) - (previous.close - beforePrevious.close) else 0.0)
     }
 
     fun atr(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
