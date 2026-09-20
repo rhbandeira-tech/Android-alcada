@@ -63,14 +63,20 @@ class BatchDataImporter(private val workDir: File, private val maxExpandedBytes:
     private fun merge(files: List<File>, output: File): MergeResult {
         val queue = PriorityQueue<Cursor>(compareBy { it.candle.epochMillis }); val readers = mutableListOf<BufferedReader>()
         try {
-            files.forEach { file -> val reader = file.bufferedReader(); readers += reader; readCanonical(reader)?.let { queue += Cursor(reader, it) } }
+            files.forEach { file ->
+                val reader = file.bufferedReader(); readers += reader
+                readCanonical(reader)?.let { queue.add(Cursor(reader, it)) }
+            }
             var valid = 0L; var duplicates = 0L; var lastTime: Long? = null; var first: Long? = null; var last: Long? = null
             output.bufferedWriter().use { writer ->
                 writer.appendLine("timestamp,open,high,low,close,volume,spread")
                 while (queue.isNotEmpty()) {
                     val cursor = queue.poll(); val c = cursor.candle
                     if (lastTime == c.epochMillis) duplicates++ else { writer.appendLine(row(c)); valid++; first = first ?: c.epochMillis; last = c.epochMillis; lastTime = c.epochMillis }
-                    readCanonical(cursor.reader)?.let { cursor.candle = it; queue += cursor }
+                    readCanonical(cursor.reader)?.let { next ->
+                        cursor.candle = next
+                        queue.add(cursor)
+                    }
                 }
             }
             return MergeResult(valid, duplicates, first, last)
