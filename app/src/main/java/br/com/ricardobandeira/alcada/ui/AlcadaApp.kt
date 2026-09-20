@@ -284,6 +284,7 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
                     Text("${mc.simulations} simulações • blocos de ${mc.blockSize} operações para preservar sequências", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Resultado mediano ${number(mc.medianNetProfit)} • pior faixa de 5% ${number(mc.p05NetProfit)}")
                     Text("Queda máxima no percentil 95 ${number(mc.p95MaxDrawdown)} • cenários positivos ${pct(mc.profitableShare)}")
+                    Text("Leitura rápida: " + if (mc.profitableShare >= .70) "a maioria dos reordenamentos permaneceu positiva" else "há sensibilidade relevante à ordem das operações", color = if (mc.profitableShare >= .70) Positive else Pending, style = MaterialTheme.typography.bodySmall)
                 }
             }
             BarChart("Desempenho por ativo", it.assets)
@@ -379,6 +380,8 @@ private fun chartExplanation(title: String): String = when {
     title.contains("horário") -> "Compara o resultado por hora UTC. Converta o horário da plataforma para UTC antes de aplicar um filtro de sessão."
     title.contains("Dentro") -> "Compara dados usados no desenvolvimento com dados posteriores não usados na criação. Menor deterioração fora da amostra é evidência de maior estabilidade."
     title.contains("expiração") -> "Compara período gráfico e expiração. Configure ambos exatamente como indicados na estratégia."
+    title.contains("Monte Carlo") -> "Reordena blocos das operações históricas muitas vezes para medir sensibilidade à sequência. Observe resultado mediano, faixa de 5%, queda máxima extrema e proporção de cenários positivos. Não é previsão; use para avaliar fragilidade antes de reproduzir a estratégia."
+    title.contains("ativo") -> "Compara o resultado entre ativos. Interprete somente ativos com amostra suficiente e reproduza a estratégia no mesmo símbolo e período gráfico."
     title.contains("pavio") -> "Relaciona a proporção do pavio ao movimento posterior. No gráfico, compare o pavio com o corpo da vela, aplique o limite indicado nas regras e confirme direção, período e expiração ou saída antes do sinal."
     else -> "Este painel resume evidência histórica. As estratégias detalham ativo, período gráfico, direção, filtros e parâmetros para reprodução."
 }
