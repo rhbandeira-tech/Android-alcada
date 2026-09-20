@@ -79,6 +79,12 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
         candles
     }
 
+    suspend fun deleteDataset(id: String) = withContext(Dispatchers.IO) {
+        val dataset = dao.dataset(id) ?: return@withContext
+        dataset.rawPath?.let { path -> File(path).takeIf { it.exists() }?.delete() }
+        dao.deleteDataset(id)
+    }
+
     suspend fun saveBacktest(datasetId: String, market: Market, result: BacktestResult): BacktestEntity {
         val m = result.metrics
         val metrics = listOf(m.trades, m.wins, m.winRate, m.netProfit, m.profitFactor, m.expectancy, m.maxDrawdown, m.breakEvenWinRate ?: Double.NaN).joinToString("|")
