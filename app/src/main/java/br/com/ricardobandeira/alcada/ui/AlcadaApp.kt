@@ -318,6 +318,7 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 val folds = data.getOrNull(18) ?: "—"
                 Text("Evidência fora da amostra: $oosTrades operações • resultado esperado $oosExpectancy • fator de lucro $oosPf", style = MaterialTheme.typography.bodySmall)
                 Text("Estabilidade temporal: $stable de $folds janelas futuras com resultado positivo e fator de lucro acima de 1.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (data.size > 20) Text("Monte Carlo: P5 do resultado ${number(data.getOrNull(19)?.toDoubleOrNull() ?: Double.NaN)} • P95 da queda ${number(data.getOrNull(20)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             data.getOrNull(12)?.takeIf { it.isNotBlank() }?.let { encoded ->
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
