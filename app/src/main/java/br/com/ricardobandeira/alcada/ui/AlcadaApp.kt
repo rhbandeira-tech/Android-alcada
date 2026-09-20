@@ -294,6 +294,15 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 color = if (data.getOrNull(8) == "true") Negative else Positive,
             )
             if (data.getOrNull(8) == "true") Text("Alerta: sinais de fragilidade ou sobreajuste.", color = Negative)
+            if (data.size > 18) {
+                val oosTrades = data.getOrNull(14) ?: "—"
+                val oosExpectancy = data.getOrNull(15)?.toDoubleOrNull()?.let(::number) ?: "—"
+                val oosPf = data.getOrNull(16)?.toDoubleOrNull()?.let(::number) ?: "—"
+                val stable = data.getOrNull(17) ?: "—"
+                val folds = data.getOrNull(18) ?: "—"
+                Text("Evidência fora da amostra: $oosTrades operações • resultado esperado $oosExpectancy • fator de lucro $oosPf", style = MaterialTheme.typography.bodySmall)
+                Text("Estabilidade temporal: $stable de $folds janelas futuras com resultado positivo e fator de lucro acima de 1.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             data.getOrNull(12)?.takeIf { it.isNotBlank() }?.let { encoded ->
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 Text("Regras da estratégia", fontWeight = FontWeight.SemiBold)
