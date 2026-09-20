@@ -58,4 +58,12 @@ class FeatureEngineTest {
         )
         assertEquals(0.0, FeatureEngine.volatility(candles, 3), 1e-12)
     }
+
+    @Test
+    fun `aceleracao usa apenas velas atuais e anteriores`() {
+        val a = Candle(1, 10.0, 10.5, 9.5, 10.0, 1.0, 0.0)
+        val b = Candle(2, 10.0, 11.5, 9.8, 11.0, 1.0, 0.0)
+        val d = Candle(3, 11.0, 13.5, 10.8, 13.0, 1.0, 0.0)
+        assertEquals(1.0, FeatureEngine.candle(d, b, a).acceleration, 1e-9)
+    }
 }
