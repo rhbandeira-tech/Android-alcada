@@ -69,6 +69,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         return when {
             error is java.io.FileNotFoundException -> "O arquivo de dados não está mais disponível. Importe-o novamente."
             error is java.util.zip.ZipException -> "O arquivo ZIP está corrompido ou não é compatível."
+            message.contains("pelo menos 20 velas", true) -> "A pesquisa precisa de pelo menos 20 velas válidas."
             message.contains("pelo menos duas velas", true) || message.contains("ao menos duas velas", true) ->
                 "O arquivo precisa conter pelo menos duas velas válidas."
             message.contains("ordem cronológica", true) ->
