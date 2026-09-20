@@ -23,6 +23,13 @@ data class StrategyDefinition(
     val direction: Direction, val entries: List<EntryRule>, val exit: ExitRule, val seed: Long
 )
 data class Trade(val entryTime: Long, val exitTime: Long, val pnl: Double, val won: Boolean)
+data class BacktestResult(
+    val metrics: BacktestMetrics,
+    val trades: List<Trade>,
+    val equity: List<Double>,
+    val drawdown: List<Double>,
+    val rollingWinRate: List<Double>
+)
 data class BacktestMetrics(
     val trades: Int, val wins: Int, val winRate: Double, val netProfit: Double, val profitFactor: Double,
     val expectancy: Double, val maxDrawdown: Double, val breakEvenWinRate: Double? = null
@@ -30,4 +37,3 @@ data class BacktestMetrics(
 data class EvaluatedStrategy(val strategy: StrategyDefinition, val metrics: BacktestMetrics, val oosWinRate: Double, val robustness: Double, val status: ValidationStatus, val overfitWarning: Boolean)
 
 data class ResearchBudget(val maxCandidates: Int = 10_000, val threads: Int = 2, val memoryMb: Int = 256, val seed: Long = 42, val minimumTrades: Int = 30)
-

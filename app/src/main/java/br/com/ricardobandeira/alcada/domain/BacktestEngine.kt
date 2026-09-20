@@ -4,6 +4,10 @@ import kotlin.math.max
 
 object BacktestEngine {
     fun binary(candles: List<Candle>, signals: List<Pair<Int, Direction>>, expirationBars: Int, payout: Double): BacktestMetrics {
+        return binaryResult(candles, signals, expirationBars, payout).metrics
+    }
+
+    fun binaryResult(candles: List<Candle>, signals: List<Pair<Int, Direction>>, expirationBars: Int, payout: Double): BacktestResult {
         require(expirationBars > 0 && payout > 0.0)
         val trades = signals.mapNotNull { (i, direction) ->
             if (i < 0 || i + expirationBars >= candles.size) null else {
@@ -12,12 +16,16 @@ object BacktestEngine {
                 Trade(candles[i].epochMillis, candles[i + expirationBars].epochMillis, if (won) payout else -1.0, won)
             }
         }
-        return metrics(trades, 1.0 / (1.0 + payout))
+        return result(trades, 1.0 / (1.0 + payout))
     }
 
     fun forex(candles: List<Candle>, entries: List<Pair<Int, Direction>>, exit: ExitRule, cost: Double): BacktestMetrics {
+        return forexResult(candles, entries, exit, cost).metrics
+    }
+
+    fun forexResult(candles: List<Candle>, entries: List<Pair<Int, Direction>>, exit: ExitRule, cost: Double): BacktestResult {
         val trades = entries.mapNotNull { (index, direction) ->
-            if (index !in candles.indices || direction !in listOf(Direction.LONG, Direction.SHORT)) return@mapNotNull null
+            if (index !in 0 until candles.lastIndex || direction !in listOf(Direction.LONG, Direction.SHORT)) return@mapNotNull null
             val entry = candles[index].close
             var best = entry; var result: Pair<Int, Double>? = null
             val last = minOf(candles.lastIndex, index + (exit.bars ?: 100))
@@ -30,12 +38,15 @@ object BacktestEngine {
                 if (exit.stopLoss?.let { adverse >= it } == true) { result = i to -exit.stopLoss; break }
                 if (exit.takeProfit?.let { favorable >= it } == true) { result = i to exit.takeProfit; break }
                 if (trailing) { result = i to ((if (sign > 0) best - entry else entry - best) - exit.trailingStop!!); break }
+                if (exit.condition?.let { matches(it, c, candles.getOrNull(i - 1)) } == true) {
+                    result = i to ((c.close - entry) * sign); break
+                }
             }
             val (out, gross) = result ?: (last to ((candles[last].close - entry) * if (direction == Direction.LONG) 1 else -1))
             val pnl = gross - cost - candles[index].spread
             Trade(candles[index].epochMillis, candles[out].epochMillis, pnl, pnl > 0)
         }
-        return metrics(trades)
+        return result(trades)
     }
 
     fun metrics(trades: List<Trade>, breakEven: Double? = null): BacktestMetrics {
@@ -47,5 +58,30 @@ object BacktestEngine {
         return BacktestMetrics(trades.size, wins, if (trades.isEmpty()) 0.0 else wins.toDouble() / trades.size,
             equity, if (grossLoss == 0.0) if (grossProfit > 0) Double.POSITIVE_INFINITY else 0.0 else grossProfit / grossLoss,
             if (trades.isEmpty()) 0.0 else equity / trades.size, drawdown, breakEven)
+    }
+
+    fun result(trades: List<Trade>, breakEven: Double? = null): BacktestResult {
+        var current = 0.0
+        var peak = 0.0
+        val equity = trades.map { current += it.pnl; current }
+        val drawdown = equity.map { value -> peak = max(peak, value); peak - value }
+        val rolling = trades.indices.map { index ->
+            val start = maxOf(0, index - 19)
+            trades.subList(start, index + 1).count(Trade::won).toDouble() / (index - start + 1)
+        }
+        return BacktestResult(metrics(trades, breakEven), trades, equity, drawdown, rolling)
+    }
+
+    private fun matches(rule: EntryRule, candle: Candle, previous: Candle?): Boolean {
+        val feature = FeatureEngine.candle(candle, previous)
+        val value = when (rule.feature) {
+            "wickBodyRatio" -> feature.wickBodyRatio
+            "upperWick" -> feature.upperWick
+            "lowerWick" -> feature.lowerWick
+            "momentum" -> feature.momentum
+            "range" -> feature.range
+            else -> return false
+        }
+        return when (rule.operator) { ">" -> value > rule.threshold; ">=" -> value >= rule.threshold; "<" -> value < rule.threshold; "<=" -> value <= rule.threshold; else -> false }
     }
 }

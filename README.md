@@ -6,7 +6,9 @@ Alçada é um laboratório mobile, não um robô de execução de ordens. Todo c
 
 ## Estado funcional
 
-- Aplicativo Kotlin/Compose Material 3, tema grafite, navegação Dashboard/Descobrir/Backtest/Dados/Histórico/Estratégia/Configurações e painel com 3 posições em cada um dos quatro perfis.
+- Aplicativo Kotlin/Compose Material 3 com identidade grafite, logo vetorial/adaptive icon e navegação simplificada em Início, Analisar, Backtest e Mais.
+- Fluxo Android completo de seleção e importação de CSV, cópia privada, validação em chunks, metadados Room e seleção do dataset em pesquisa/backtest.
+- ViewModel conecta UI, Room e motores fora da main thread, com loading, progresso, erro, vazio e cancelamento cooperativo.
 - Domínio independente do Android para candles, features, regras serializáveis, opções binárias e Forex (SL, TP, trailing, saída temporal, spread/custo).
 - Pesquisa evolucionária determinística por seed e em `Flow`: gera e avalia candidatos de forma incremental, poda por requisitos mínimos e mantém somente o melhor, sem materializar o espaço combinatório.
 - Features iniciais: geometria OHLC, corpo, pavios, razões pavio/corpo e pavio/range, range, ATR, volatilidade, gap e momentum. O limite temporal exclusivo das janelas evita leitura do futuro.
@@ -14,11 +16,12 @@ Alçada é um laboratório mobile, não um robô de execução de ordens. Todo c
 - Room para pesquisas, estratégias, backtests, validações, datasets, eventos econômicos e configurações. A limpeza WorkManager remove apenas arquivos brutos sem apagar resultados.
 - Interfaces explícitas para Dukascopy e agenda econômica. Nenhuma URL, chave ou API não confirmada foi inventada.
 - Testes unitários para features, fronteira temporal, payout/break-even e importação em chunks.
+- Gráficos derivados exclusivamente de trades/candles calculados: equity, drawdown, rolling win rate, distribuição, hora/dia, heatmap, IS/OOS, ativo, expiração e relação pavio/movimento futuro.
 
 ## Arquitetura
 
 ```text
-ui/       Compose e identidade visual; nunca executa loops quantitativos na main thread
+ui/       Compose, ViewModel e identidade visual; nunca executa loops quantitativos na main thread
 domain/   modelos, features, backtest e pesquisa (`Dispatchers.Default` + cancelamento cooperativo)
 data/     Room, CSV e contratos de provedores externos
 work/     manutenção persistente do cache local
@@ -48,6 +51,6 @@ O APK sai em `app/build/outputs/apk/debug/app-debug.apk`. O repositório não ve
 ## Próximas evoluções sem romper o núcleo
 
 - Cliente Dukascopy escolhido/configurado pelo responsável pelo produto e provider de calendário econômico confiável.
-- UI do seletor de documento e persistência do pipeline completo de pesquisa em foreground WorkManager.
-- Walk-forward, Monte Carlo, múltiplos ativos/timeframes e gráficos detalhados (equity, drawdown, distribuição, heatmap, rolling win rate e matrizes).
+- Foreground WorkManager para pesquisas que precisem sobreviver ao encerramento forçado do processo; a execução atual é cancelável e preservada enquanto o processo está ativo.
+- Walk-forward e Monte Carlo aprofundados, além da divisão temporal IS/OOS já executada pelo motor local.
 - Instrumentação de bateria/thermal status e benchmark em aparelhos representativos para calibrar automaticamente threads e memória.

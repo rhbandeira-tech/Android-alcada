@@ -18,15 +18,18 @@ class ResearchEngine {
         var accepted = 0; var best: EvaluatedStrategy? = null
         repeat(budget.maxCandidates) { n ->
             currentCoroutineContext().ensureActive()
-            val ratio = 0.5 + random.nextDouble() * 4.5
-            val direction = if (random.nextBoolean()) Direction.CALL else Direction.PUT
-            val expiration = 1 + random.nextInt(8)
+            // After the initial population, mutate/recombine the current elite without retaining a huge population.
+            val eliteRule = best?.strategy?.entries?.firstOrNull()
+            val ratio = if (eliteRule != null && n % 3 != 0) (eliteRule.threshold + random.nextGaussian() * .35).coerceIn(.25, 8.0) else 0.5 + random.nextDouble() * 4.5
+            val direction = if (best != null && n % 4 != 0) best!!.strategy.direction else if (random.nextBoolean()) Direction.CALL else Direction.PUT
+            val eliteExpiry = best?.strategy?.exit?.bars
+            val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             // Signals use only the current/past candle; the future is consulted exclusively by the backtest.
             val signals = (1 until candles.size - expiration).asSequence()
                 .filter { FeatureEngine.candle(candles[it], candles[it - 1]).wickBodyRatio >= ratio }
                 .map { it to direction }.take(5_000).toList()
             val split = (candles.size * .7).toInt()
-            val ins = BacktestEngine.binary(candles, signals.filter { it.first < split }, expiration, .8)
+            val ins = BacktestEngine.binary(candles, signals.filter { it.first + expiration < split }, expiration, .8)
             val oos = BacktestEngine.binary(candles, signals.filter { it.first >= split }, expiration, .8)
             if (ins.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
                 accepted++
@@ -45,4 +48,3 @@ class ResearchEngine {
         emit(ResearchProgress(budget.maxCandidates, accepted, best, true))
     }.flowOn(Dispatchers.Default)
 }
-

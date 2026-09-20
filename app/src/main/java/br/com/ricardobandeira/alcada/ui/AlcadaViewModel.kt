@@ -1,0 +1,115 @@
+package br.com.ricardobandeira.alcada.ui
+
+import android.app.Application
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import br.com.ricardobandeira.alcada.AlcadaApplication
+import br.com.ricardobandeira.alcada.data.*
+import br.com.ricardobandeira.alcada.domain.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.UUID
+
+data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null)
+data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
+data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>)
+
+class AlcadaViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = AlcadaRepository(application, (application as AlcadaApplication).database.dao())
+    val datasets = repository.datasets.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val strategies = repository.strategies.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val runs = repository.runs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val backtests = repository.backtests.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val _selectedDataset = MutableStateFlow<String?>(null)
+    val selectedDataset = _selectedDataset.asStateFlow()
+    private val _importState = MutableStateFlow(OperationState())
+    val importState = _importState.asStateFlow()
+    private val _researchState = MutableStateFlow(OperationState())
+    val researchState = _researchState.asStateFlow()
+    private val _backtestState = MutableStateFlow(OperationState())
+    val backtestState = _backtestState.asStateFlow()
+    private val _result = MutableStateFlow<BacktestResult?>(null)
+    val result = _result.asStateFlow()
+    private val _analysis = MutableStateFlow<QuantAnalysis?>(null)
+    val analysis = _analysis.asStateFlow()
+    private var researchJob: Job? = null
+    private var backtestJob: Job? = null
+
+    fun selectDataset(id: String) { _selectedDataset.value = id }
+
+    fun importCsv(uri: Uri) = viewModelScope.launch {
+        _importState.value = OperationState(true, message = "Validando CSV em chunks…")
+        runCatching {
+            val name = getApplication<Application>().contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                if (it.moveToFirst()) it.getString(0) else null
+            } ?: "dataset.csv"
+            repository.importCsv(uri, name)
+        }.onSuccess { _selectedDataset.value = it.id; _importState.value = OperationState(message = "${it.rowCount} velas importadas") }
+            .onFailure { _importState.value = OperationState(error = it.message ?: "Falha ao importar CSV") }
+    }
+
+    fun runBacktest(options: BacktestOptions) {
+        val id = _selectedDataset.value ?: return failBacktest("Selecione um dataset")
+        backtestJob?.cancel()
+        backtestJob = viewModelScope.launch {
+            _backtestState.value = OperationState(true, .05f, "Carregando dados em chunks…")
+            runCatching {
+                val candles = repository.loadCandles(id)
+                _backtestState.value = OperationState(true, .35f, "Calculando sinais sem look-ahead…")
+                val direction = if (options.market == Market.BINARY_OPTIONS) options.direction else if (options.direction == Direction.PUT || options.direction == Direction.SHORT) Direction.SHORT else Direction.LONG
+                val signals = SignalEngine.wickSignals(candles, direction)
+                val result = if (options.market == Market.BINARY_OPTIONS) BacktestEngine.binaryResult(candles, signals, options.expiration, options.payout)
+                else BacktestEngine.forexResult(candles, signals, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
+                val split = (candles.size * .7).toInt()
+                fun evaluate(entries: List<Pair<Int, Direction>>, expiration: Int = options.expiration) =
+                    if (options.market == Market.BINARY_OPTIONS) BacktestEngine.binaryResult(candles, entries, expiration, options.payout)
+                    else BacktestEngine.forexResult(candles, entries, ExitRule(options.stopLoss, options.takeProfit, options.trailing, options.bars), options.cost)
+                val validationHorizon = if (options.market == Market.BINARY_OPTIONS) options.expiration else options.bars
+                val ins = evaluate(signals.filter { it.first + validationHorizon < split }).metrics.netProfit
+                val oos = evaluate(signals.filter { it.first >= split }).metrics.netProfit
+                val selectedMetadata = datasets.value.firstOrNull { it.id == id }
+                val expiry = if (options.market == Market.BINARY_OPTIONS) (1..5).map { value -> Bucket("${selectedMetadata?.timeframeMinutes ?: 1}m×$value", evaluate(signals, value).metrics.netProfit, signals.size) } else emptyList()
+                val name = selectedMetadata?.symbol ?: "LOCAL"
+                _analysis.value = QuantAnalysis(ChartAnalytics.wickBuckets(ChartAnalytics.wickOutcomes(candles, validationHorizon)), listOf(Bucket("IS", ins, signals.count { it.first + validationHorizon < split }), Bucket("OOS", oos, signals.count { it.first >= split })), expiry, listOf(Bucket(name, result.metrics.netProfit, result.metrics.trades)), ChartAnalytics.dayHourHeatmap(result.trades))
+                _backtestState.value = OperationState(true, .85f, "Persistindo resultado…")
+                repository.saveBacktest(id, options.market, result); result
+            }.onSuccess { _result.value = it; _backtestState.value = OperationState(message = "Backtest concluído") }
+                .onFailure { if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Backtest cancelado") else failBacktest(it.message ?: "Falha no backtest") }
+        }
+    }
+
+    fun runResearch(budget: Int = 2_000) {
+        val datasetId = _selectedDataset.value ?: return failResearch("Selecione um dataset")
+        researchJob?.cancel()
+        researchJob = viewModelScope.launch {
+            val runId = UUID.randomUUID().toString(); val started = System.currentTimeMillis()
+            val dao = (getApplication<Application>() as AlcadaApplication).database.dao()
+            dao.saveRun(ResearchRunEntity(runId, started, null, "RUNNING", 0, 42, "budget=$budget"))
+            _researchState.value = OperationState(true, 0f, "Preparando pesquisa local…")
+            runCatching {
+                val candles = repository.loadCandles(datasetId)
+                ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, minimumTrades = minOf(30, maxOf(5, candles.size / 50)))).collect { progress ->
+                    val ratio = progress.evaluated.toFloat() / budget
+                    _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos • ${progress.accepted} aprovados")
+                    dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
+                    if (progress.finished) progress.best?.let { repository.saveResearch(runId, datasetId, it) }
+                }
+            }.onSuccess { _researchState.value = OperationState(progress = 1f, message = "Pesquisa concluída") }
+                .onFailure { error ->
+                    val cancelled = error is kotlinx.coroutines.CancellationException
+                    withContext(NonCancellable) { dao.saveRun(ResearchRunEntity(runId, started, System.currentTimeMillis(), if (cancelled) "CANCELLED" else "FAILED", (_researchState.value.progress * 100).toInt(), 42, "budget=$budget")) }
+                    _researchState.value = OperationState(message = if (cancelled) "Pesquisa cancelada" else null, error = if (cancelled) null else error.message)
+                }
+        }
+    }
+
+    fun cancelResearch() { researchJob?.cancel() }
+    fun cancelBacktest() { backtestJob?.cancel() }
+    private fun failResearch(message: String) { _researchState.value = OperationState(error = message) }
+    private fun failBacktest(message: String) { _backtestState.value = OperationState(error = message) }
+}
