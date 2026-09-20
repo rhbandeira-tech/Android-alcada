@@ -129,6 +129,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
 
 @Composable
 private fun DatasetRow(dataset: DatasetEntity, selected: Boolean, onSelect: () -> Unit, onDelete: () -> Unit) {
+    var confirmDelete by remember { mutableStateOf(false) }
     Card(
         onClick = onSelect,
         colors = CardDefaults.cardColors(
@@ -150,11 +151,11 @@ private fun DatasetRow(dataset: DatasetEntity, selected: Boolean, onSelect: () -
                 )
             }
             if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selecionado", tint = Positive)
-            IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, contentDescription = "Excluir conjunto de dados", tint = Negative) }
+            IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.DeleteOutline, contentDescription = "Excluir conjunto de dados", tint = Negative) }
         }
     }
+    if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false }, title = { Text("Excluir conjunto de dados?") }, text = { Text("O arquivo bruto importado será removido do aparelho. Estratégias e resultados históricos permanecem salvos.") }, confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Excluir", color = Negative) } }, dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } })
 }
-
 @Composable
 private fun DatasetSelector(values: List<DatasetEntity>, selected: String?, select: (String) -> Unit) {
     Card {
