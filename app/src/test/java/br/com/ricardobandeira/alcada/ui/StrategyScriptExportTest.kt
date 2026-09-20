@@ -2,6 +2,7 @@ package br.com.ricardobandeira.alcada.ui
 
 import br.com.ricardobandeira.alcada.data.StrategyEntity
 import org.junit.Assert.*
+import kotlin.test.assertFailsWith
 import org.junit.Test
 
 class StrategyScriptExportTest {
@@ -176,5 +177,3 @@ class StrategyScriptExportTest {
         assertTrue(lua.contains("return (false)"))
     }
 }
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
