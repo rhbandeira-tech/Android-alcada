@@ -595,7 +595,16 @@ private fun HistoryBacktest(backtest: BacktestEntity) {
         }
     }
 }
-private fun metricExplanation(metric: String, metrics: BacktestMetrics): String = when (metric) {\n    "Taxa de acerto" -> "Percentual de operações vencedoras: " + pct(metrics.winRate) + ". Em opções, compare com a taxa mínima de equilíbrio; taxa de acerto isolada não mede rentabilidade."\n    "Resultado" -> "Soma do resultado das " + metrics.trades + " operações: " + number(metrics.netProfit) + ". Observe junto com queda máxima e distribuição."\n    "Queda máxima" -> "Maior recuo acumulado desde um pico: " + number(metrics.maxDrawdown) + ". Ajuda a visualizar a pior sequência histórica e a necessidade de controle de risco."\n    "Operações" -> "Amostra total: " + metrics.trades + " operações. Amostras pequenas têm maior incerteza; compare validação temporal e fora da amostra."\n    "Fator de lucro" -> "Relação entre ganhos brutos e perdas brutas: " + number(metrics.profitFactor) + ". Acima de 1 indica vantagem histórica neste teste, sem garantir repetição futura."\n    else -> "Média histórica por operação: " + number(metrics.expectancy) + ". Valor positivo indica resultado médio favorável nesta amostra; confirme estabilidade, custos e queda máxima."\n}\n\n@Composable private fun EmptyState(icon: ImageVector, title: String, body: String) {
+private fun metricExplanation(metric: String, metrics: BacktestMetrics): String = when (metric) {
+    "Taxa de acerto" -> "Percentual de operações vencedoras: " + pct(metrics.winRate) + ". Em opções, compare com a taxa mínima de equilíbrio; taxa de acerto isolada não mede rentabilidade."
+    "Resultado" -> "Soma do resultado das " + metrics.trades + " operações: " + number(metrics.netProfit) + ". Observe junto com queda máxima e distribuição."
+    "Queda máxima" -> "Maior recuo acumulado desde um pico: " + number(metrics.maxDrawdown) + ". Ajuda a visualizar a pior sequência histórica e a necessidade de controle de risco."
+    "Operações" -> "Amostra total: " + metrics.trades + " operações. Amostras pequenas têm maior incerteza; compare validação temporal e fora da amostra."
+    "Fator de lucro" -> "Relação entre ganhos brutos e perdas brutas: " + number(metrics.profitFactor) + ". Acima de 1 indica vantagem histórica neste teste, sem garantir repetição futura."
+    else -> "Média histórica por operação: " + number(metrics.expectancy) + ". Valor positivo indica resultado médio favorável nesta amostra; confirme estabilidade, custos e queda máxima."
+}
+
+@Composable private fun EmptyState(icon: ImageVector, title: String, body: String) {
     Card(Modifier.fillMaxWidth(), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.padding(28.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Surface(shape = RoundedCornerShape(16.dp), color = Analytic.copy(alpha = .10f)) { Icon(icon, null, Modifier.padding(12.dp).size(24.dp), tint = Analytic) }
