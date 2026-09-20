@@ -61,7 +61,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     }
 
     suspend fun loadCandles(id: String, maxRows: Int = 500_000): List<Candle> = withContext(Dispatchers.IO) {
-        require(maxRows > 0) { "O limite de velas precisa ser positivo." }
+        require(maxRows in 2..2_000_000) { "O limite de velas deve ficar entre 2 e 2.000.000." }
         val dataset = requireNotNull(dao.dataset(id)) { "Dataset não encontrado" }
         val path = requireNotNull(dataset.rawPath) { "Dados brutos expiraram; importe ou reproduza a pesquisa" }
         val rawFile = File(path)
