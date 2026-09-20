@@ -331,21 +331,20 @@ private fun LineChart(title: String, values: List<Double>, color: Color) {
 @Composable
 private fun BarChart(title: String, values: List<Bucket>) {
     ChartCard(title) {
-        if (values.isEmpty()) {
-            Text("Amostra insuficiente", color = Pending)
-        } else {
+        if (values.isEmpty()) Text("Amostra insuficiente", color = Pending) else {
             val maxValue = max(1e-9, values.maxOf { kotlin.math.abs(it.value) })
             Row(Modifier.fillMaxWidth().height(120.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
                 values.forEach { bucket ->
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height((90 * kotlin.math.abs(bucket.value) / maxValue).toFloat().dp),
-                            color = if (bucket.value >= 0) Positive else Negative,
-                        ) {}
-                        Text(bucket.label.take(4), style = MaterialTheme.typography.labelSmall)
+                        Text(number(bucket.value), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                        Surface(Modifier.fillMaxWidth().height((82 * kotlin.math.abs(bucket.value) / maxValue).toFloat().dp), color = if (bucket.value >= 0) Positive else Negative) {}
+                        Text(bucket.label.take(6), style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
                 }
             }
+            val best = values.maxByOrNull { it.value }
+            val worst = values.minByOrNull { it.value }
+            Text("Melhor: " + (best?.label ?: "—") + " " + number(best?.value ?: Double.NaN) + " • Pior: " + (worst?.label ?: "—") + " " + number(worst?.value ?: Double.NaN), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
