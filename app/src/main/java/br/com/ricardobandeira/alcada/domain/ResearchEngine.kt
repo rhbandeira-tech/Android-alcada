@@ -16,6 +16,7 @@ class ResearchEngine {
         require(candles.size >= 20) { "A pesquisa precisa de pelo menos 20 velas." }
         require(candles.zipWithNext().all { (a, b) -> a.epochMillis <= b.epochMillis }) { "As velas precisam estar em ordem cronológica." }
         val random = Random(budget.seed)
+        val binaryPayout = .85
         val workerCount = budget.threads.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
         val batchSize = minOf(workerCount * 4, 64)
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
@@ -85,8 +86,8 @@ class ResearchEngine {
             val oosSignals = signals.filter { it.first > split }
             currentCoroutineContext().ensureActive()
             checkpoint()
-            val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, .8)
-            val oosResult = BacktestEngine.binaryResult(researchCandles, oosSignals, expiration, .8)
+            val ins = BacktestEngine.binary(researchCandles, insSignals, expiration, binaryPayout)
+            val oosResult = BacktestEngine.binaryResult(researchCandles, oosSignals, expiration, binaryPayout)
             val oos = oosResult.metrics
             if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
                 accepted++
@@ -100,7 +101,7 @@ class ResearchEngine {
                         researchCandles,
                         signals.filter { it.first > start && it.first + expiration < end },
                         expiration,
-                        .8
+                        binaryPayout
                     )
                 }
                 val stableFolds = forwardTests.count {
