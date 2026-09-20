@@ -453,6 +453,7 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
         AlertDialog(onDismissRequest = { format = null }, title = { Text("Script " + language) }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Revise ativo, período, tamanho da posição e parâmetros da corretora antes de usar.", color = Pending, style = MaterialTheme.typography.bodySmall)
+                if (script.contains("REVISÃO OBRIGATÓRIA")) Text("Código bloqueado para entrada automática: alguns filtros ainda precisam de conversão específica para esta linguagem.", color = Negative, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(8.dp)) { Text(script, Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall) }
             }
         }, confirmButton = { TextButton(onClick = { clipboard.setText(AnnotatedString(script)); format = null }) { Text("Copiar script") } }, dismissButton = { TextButton(onClick = { format = null }) { Text("Fechar") } })
