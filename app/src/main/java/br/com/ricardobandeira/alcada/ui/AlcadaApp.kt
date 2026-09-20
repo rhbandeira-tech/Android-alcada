@@ -331,6 +331,7 @@ private fun LineChart(title: String, values: List<Double>, color: Color) {
             val last = values.last()
             Text("Início " + number(first) + " • Final " + number(last) + " • Mínimo " + number(values.min()) + " • Máximo " + number(values.max()), style = MaterialTheme.typography.bodySmall)
             Text("Variação: " + number(last - first), color = if (last >= first) Positive else Negative, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+            Text("Pontos analisados: " + values.size, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
