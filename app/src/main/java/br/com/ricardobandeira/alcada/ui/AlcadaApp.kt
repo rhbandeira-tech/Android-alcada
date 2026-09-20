@@ -178,7 +178,14 @@ private fun ResultCharts(result: BacktestResult, analysis: QuantAnalysis?) {
         analysis?.let {
             BarChart("Mapa de desempenho: dia × hora", it.heatmap)
             BarChart("Dentro da amostra × fora da amostra", it.isOos)
-            BarChart("Período gráfico × expiração", it.timeframeExpiration)\n            it.monteCarlo?.let { mc ->\n                ChartCard("Simulação Monte Carlo") {\n                    Text("500 reamostragens das operações", color = MaterialTheme.colorScheme.onSurfaceVariant)\n                    Text("Resultado mediano \${number(mc.medianNetProfit)} • pior faixa de 5% \${number(mc.p05NetProfit)}")\n                    Text("Queda máxima no percentil 95 \${number(mc.p95MaxDrawdown)} • cenários positivos \${pct(mc.profitableShare)}")\n                }\n            }
+            BarChart("Período gráfico × expiração", it.timeframeExpiration)
+            it.monteCarlo?.let { mc ->
+                ChartCard("Simulação Monte Carlo") {
+                    Text("500 reamostragens das operações", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Resultado mediano ${number(mc.medianNetProfit)} • pior faixa de 5% ${number(mc.p05NetProfit)}")
+                    Text("Queda máxima no percentil 95 ${number(mc.p95MaxDrawdown)} • cenários positivos ${pct(mc.profitableShare)}")
+                }
+            }
             BarChart("Desempenho por ativo", it.assets)
             BarChart("Proporção do pavio × movimento futuro", it.wick)
         }
