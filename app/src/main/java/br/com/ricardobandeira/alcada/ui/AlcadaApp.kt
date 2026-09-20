@@ -251,7 +251,7 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 Text("Fator de lucro $profitFactor")
             }
             Text(
-                "Robustez ${pct(data.getOrNull(6))} • ${data.getOrNull(7) ?: "pendente"}",
+                "Robustez ${pct(data.getOrNull(6))} • ${validationLabel(data.getOrNull(7))}",
                 color = if (data.getOrNull(8) == "true") Negative else Positive,
             )
         }
@@ -337,6 +337,13 @@ private fun profileLabel(value: Any?): String = when (value?.toString()) {
     "AGGRESSIVE" -> "Agressivo"
     "EXPERIMENTAL" -> "Experimental"
     else -> value?.toString() ?: "—"
+}
+private fun validationLabel(value: Any?): String = when (value?.toString()) {
+    "VALIDATED" -> "validada"
+    "FRAGILE" -> "frágil"
+    "REJECTED" -> "rejeitada"
+    "PENDING", null -> "pendente"
+    else -> value.toString().lowercase(brLocale).replace('_', ' ')
 }
 private fun statusLabel(value: Any?): String = when (value?.toString()) {
     "RUNNING" -> "em andamento"
