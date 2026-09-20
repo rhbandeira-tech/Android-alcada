@@ -173,6 +173,28 @@ private fun StrategyRankingControls(strategies: List<StrategyEntity>) {
             }
         }
         val profileOrder = listOf("CONSERVATIVE", "MODERATE", "AGGRESSIVE", "EXPERIMENTAL")
+        if (profile == "TODOS") {
+            val champions = filtered.groupBy { it.profile }.mapNotNull { (key, items) -> items.firstOrNull()?.let { key to it } }
+                .sortedBy { (key, _) -> profileOrder.indexOf(key).let { index -> if (index < 0) Int.MAX_VALUE else index } }
+            if (champions.isNotEmpty()) {
+                Text("Campeões por perfil", fontWeight = FontWeight.Bold)
+                Text("Compare os líderes de cada perfil usando o mesmo critério de ordenação selecionado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(champions) { (profileName, strategy) ->
+                        val d = strategy.definitionJson.split('|')
+                        Card(Modifier.width(220.dp), colors = CardDefaults.cardColors(containerColor = Analytic.copy(alpha = .08f))) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(profileName, fontWeight = FontWeight.Bold, color = Analytic)
+                                Text(strategy.name, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                                Text("Robustez ${pct(d.getOrNull(6))} • OOS ${pct(d.getOrNull(2))}", style = MaterialTheme.typography.bodySmall)
+                                Text("Fator ${number(d.getOrNull(3)?.toDoubleOrNull() ?: Double.NaN)} • esperado ${number(d.getOrNull(4)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
+                                Text("Queda máxima ${number(d.getOrNull(5)?.toDoubleOrNull() ?: Double.NaN)}", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         filtered.groupBy { it.profile }.entries.sortedBy { profileOrder.indexOf(it.key).let { index -> if (index < 0) Int.MAX_VALUE else index } }.forEach { entry ->
             val profileItems = entry.value
             Text(profileLabel(entry.key), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Analytic)
