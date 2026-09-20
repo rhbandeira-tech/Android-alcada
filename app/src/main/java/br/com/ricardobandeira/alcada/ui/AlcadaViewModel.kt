@@ -18,6 +18,7 @@ import java.util.UUID
 
 data class OperationState(val running: Boolean = false, val progress: Float = 0f, val message: String? = null, val error: String? = null)
 data class BacktestOptions(val market: Market = Market.BINARY_OPTIONS, val direction: Direction = Direction.CALL, val expiration: Int = 3, val payout: Double = .80, val stopLoss: Double = .002, val takeProfit: Double = .004, val trailing: Double = .0015, val bars: Int = 20, val cost: Double = 0.0)
+data class ResearchOptions(val candidates: Int = 2_000, val minimumTrades: Int = 30, val intensive: Boolean = false)
 data class QuantAnalysis(val wick: List<Bucket>, val isOos: List<Bucket>, val timeframeExpiration: List<Bucket>, val assets: List<Bucket>, val heatmap: List<Bucket>, val monteCarlo: MonteCarloSummary? = null)
 
 class AlcadaViewModel(application: Application) : AndroidViewModel(application) {
@@ -131,7 +132,8 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun runResearch(budget: Int = 2_000) {
+    fun runResearch(options: ResearchOptions = ResearchOptions()) {
+        val budget = options.candidates
         val datasetId = _selectedDataset.value ?: return failResearch("Selecione um conjunto de dados")
         researchJob?.cancel()
         researchJob = viewModelScope.launch {
@@ -141,7 +143,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
             _researchState.value = OperationState(true, 0f, "Preparando pesquisa local…")
             runCatching {
                 val candles = repository.loadCandles(datasetId)
-                ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, minimumTrades = minOf(30, maxOf(5, candles.size / 50)))).collect { progress ->
+                ResearchEngine().discover(candles, ResearchBudget(maxCandidates = budget, threads = if (options.intensive) maxOf(2, Runtime.getRuntime().availableProcessors() - 1) else 2, memoryMb = if (options.intensive) 512 else 256, minimumTrades = minOf(options.minimumTrades, maxOf(5, candles.size / 50)))).collect { progress ->
                     val ratio = progress.evaluated.toFloat() / budget
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
                     dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
