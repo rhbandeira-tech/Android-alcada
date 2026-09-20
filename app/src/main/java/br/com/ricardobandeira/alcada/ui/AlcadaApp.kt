@@ -97,7 +97,7 @@ fun AlcadaApp(vm: AlcadaViewModel = viewModel()) {
                         }
                         Switch(checked = intensive, onCheckedChange = { intensive = it }, enabled = !state.running)
                     }
-                    Text("Payout da pesquisa: ${(researchPayout * 100).toInt()}% • equilíbrio ${pct(1.0 / (1.0 + researchPayout))}")
+                    Text("Retorno da pesquisa: ${(researchPayout * 100).toInt()}% • taxa mínima para equilíbrio ${pct(1.0 / (1.0 + researchPayout))}")
                     Slider(researchPayout, { researchPayout = it }, valueRange = .5f..1f, enabled = !state.running)
                     Text("Orçamento: ${candidates.toInt()} candidatos")
                     Slider(candidates, { candidates = it }, valueRange = 500f..10_000f, steps = 18, enabled = !state.running)
