@@ -2,6 +2,11 @@ package br.com.ricardobandeira.alcada.domain
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -23,6 +28,10 @@ class ResearchEngine {
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
         require(budget.memoryMb >= 64) { "A pesquisa precisa de pelo menos 64 MB de orçamento de memória." }
+        val evaluationSlots = Semaphore(workerCount)
+        suspend fun <T> parallelMapBounded(items: List<T>, block: suspend (T) -> Unit) = coroutineScope {
+            items.map { item -> async(Dispatchers.Default) { evaluationSlots.withPermit { block(item) } } }.awaitAll()
+        }
         var accepted = 0; var best: EvaluatedStrategy? = null
         val elite = mutableListOf<EvaluatedStrategy>()
         repeat(budget.maxCandidates) { n ->
