@@ -15,6 +15,23 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     val runs: Flow<List<ResearchRunEntity>> = dao.researchRuns()
     val backtests: Flow<List<BacktestEntity>> = dao.backtests()
 
+    suspend fun importBatch(items: List<Pair<Uri, String>>, onProgress: (Int, Int, String) -> Unit): Pair<DatasetEntity, ImportSummary> = withContext(Dispatchers.IO) {
+        val id = UUID.randomUUID().toString()
+        val directory = File(context.filesDir, "datasets").apply { mkdirs() }
+        val target = File(directory, "$id.csv")
+        val sources = items.map { (uri, name) ->
+            ImportSource(name) { requireNotNull(context.contentResolver.openInputStream(uri)) { "Não foi possível abrir $name" } }
+        }
+        val summary = BatchDataImporter(File(context.cacheDir, "importacao")).import(sources, target, onProgress)
+        require(summary.validCandles > 1) { "São necessárias pelo menos duas velas válidas." }
+        val label = if (items.size == 1) items.first().second else "Importação de ${items.size} arquivos"
+        val entity = DatasetEntity(id, label, label.substringBeforeLast('.').uppercase(), "LOCAL", 1,
+            requireNotNull(summary.firstEpochMillis), requireNotNull(summary.lastEpochMillis), target.absolutePath,
+            System.currentTimeMillis(), summary.validCandles)
+        dao.saveDataset(entity)
+        entity to summary
+    }
+
     suspend fun importCsv(uri: Uri, displayName: String): DatasetEntity = withContext(Dispatchers.IO) {
         val id = UUID.randomUUID().toString()
         val directory = File(context.filesDir, "datasets").apply { mkdirs() }
