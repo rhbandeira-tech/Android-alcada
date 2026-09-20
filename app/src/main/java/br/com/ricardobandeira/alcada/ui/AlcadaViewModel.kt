@@ -40,6 +40,12 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
     private var importJob: Job? = null
     private var researchJob: Job? = null
     private var backtestJob: Job? = null
+    private fun friendlyError(error: Throwable): String = when (error) {
+        is java.io.FileNotFoundException -> "O arquivo de dados não está mais disponível. Importe-o novamente."
+        is java.util.zip.ZipException -> "O arquivo ZIP está corrompido ou não é compatível."
+        is IllegalArgumentException -> error.message?.takeIf { it.length <= 140 } ?: "Os dados informados são inválidos."
+        else -> "Não foi possível concluir a operação. Verifique os dados e tente novamente."
+    }
 
     fun selectDataset(id: String) { _selectedDataset.value = id }
 
@@ -65,7 +71,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 _importState.value = OperationState(progress = 1f, message = "${summary.validCandles} velas válidas • ${summary.duplicates} duplicadas • ${summary.csvFiles} CSV(s)$problems")
             }.onFailure {
                 if (it is kotlinx.coroutines.CancellationException) _importState.value = OperationState(message = "Importação cancelada")
-                else _importState.value = OperationState(error = it.message ?: "Não foi possível importar os arquivos.")
+                else _importState.value = OperationState(error = friendlyError(it))
             }
         }
     }
@@ -99,7 +105,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 _backtestState.value = OperationState(true, .85f, "Persistindo resultado…")
                 repository.saveBacktest(id, options.market, result); result
             }.onSuccess { _result.value = it; _backtestState.value = OperationState(message = "Teste histórico concluído") }
-                .onFailure { if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Teste histórico cancelado") else failBacktest(it.message ?: "Falha no teste histórico") }
+                .onFailure { if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Teste histórico cancelado") else failBacktest(friendlyError(it)) }
         }
     }
 
@@ -123,7 +129,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 .onFailure { error ->
                     val cancelled = error is kotlinx.coroutines.CancellationException
                     withContext(NonCancellable) { dao.saveRun(ResearchRunEntity(runId, started, System.currentTimeMillis(), if (cancelled) "CANCELLED" else "FAILED", (_researchState.value.progress * 100).toInt(), 42, "budget=$budget")) }
-                    _researchState.value = OperationState(message = if (cancelled) "Pesquisa cancelada" else null, error = if (cancelled) null else error.message)
+                    _researchState.value = OperationState(message = if (cancelled) "Pesquisa cancelada" else null, error = if (cancelled) null else friendlyError(error))
                 }
         }
     }
