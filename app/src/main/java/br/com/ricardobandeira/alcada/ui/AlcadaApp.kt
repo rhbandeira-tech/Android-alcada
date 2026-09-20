@@ -494,6 +494,7 @@ internal fun strategyScript(strategy: StrategyEntity, data: List<String>, langua
 
 internal fun scriptRule(encoded: String, language: String, direction: String? = null): String? {
     val p = encoded.split(':')
+    if (p.size != 3) return null
     val feature = p.getOrNull(0) ?: return null
     val op = p.getOrNull(1) ?: return null
     val numericValue = p.getOrNull(2)?.toDoubleOrNull() ?: return null
