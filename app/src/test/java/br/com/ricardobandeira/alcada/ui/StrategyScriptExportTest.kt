@@ -53,6 +53,21 @@ class StrategyScriptExportTest {
         assertNull(scriptRule("spreadRangeRatio:>=:0.1", "TradingView", "CALL"))
     }
 
+    @Test fun tradingViewExportIsSignalOnly() {
+        val strategy = StrategyEntity(
+            id="test-pine-signal", researchRunId="run", name="Pine signal",
+            market="BINARY_OPTIONS", symbol="EURUSD", profile="EXPERIMENTAL",
+            definitionJson="", createdAt=0L
+        )
+        val data = MutableList(13) { "" }
+        data[9] = "CALL"; data[12] = "wickBodyRatio:>=:2.0"
+        val script = strategyScript(strategy, data, "TradingView")
+        assertTrue(script.contains("indicator(\\"Alçada -"))
+        assertTrue(script.contains("alertcondition(signal"))
+        assertFalse(script.contains("strategy.entry"))
+        assertFalse(script.contains("strategy(\\""))
+    }
+
     @Test fun mql5ExportNeverPlacesLiveOrders() {
         val strategy = StrategyEntity(
             id="test-mql5", researchRunId="run", name="Safe", market="BINARY_OPTIONS",
