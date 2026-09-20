@@ -81,7 +81,10 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
 
     suspend fun deleteDataset(id: String) = withContext(Dispatchers.IO) {
         val dataset = dao.dataset(id) ?: return@withContext
-        dataset.rawPath?.let { path -> File(path).takeIf { it.exists() }?.delete() }
+        dataset.rawPath?.let { path ->
+            val file = File(path)
+            if (file.exists() && !file.delete()) throw IllegalStateException("Não foi possível excluir o arquivo bruto.")
+        }
         dao.deleteDataset(id)
     }
 
