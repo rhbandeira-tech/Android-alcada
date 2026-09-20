@@ -86,6 +86,8 @@ object BacktestEngine {
             "upperWick" -> feature.upperWick
             "lowerWick" -> feature.lowerWick
             "momentum" -> feature.momentum
+            "gap" -> feature.gap
+            "acceleration" -> feature.acceleration
             "range" -> feature.range
             "bodyRangeRatio" -> feature.bodyRangeRatio
             "closeLocation" -> feature.closeLocation
