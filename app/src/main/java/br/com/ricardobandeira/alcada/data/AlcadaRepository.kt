@@ -53,16 +53,20 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     }
 
     suspend fun loadCandles(id: String, maxRows: Int = 500_000): List<Candle> = withContext(Dispatchers.IO) {
+        require(maxRows > 0) { "O limite de velas precisa ser positivo." }
         val dataset = requireNotNull(dao.dataset(id)) { "Dataset não encontrado" }
         val path = requireNotNull(dataset.rawPath) { "Dados brutos expiraram; importe ou reproduza a pesquisa" }
+        val rawFile = File(path)
+        require(rawFile.isFile && rawFile.canRead()) { "O arquivo de dados não está mais disponível." }
         val candles = ArrayList<Candle>(minOf(dataset.rowCount, maxRows.toLong()).toInt())
-        File(path).inputStream().use { stream ->
+        rawFile.inputStream().use { stream ->
             for (chunk in CsvCandleReader().chunks(stream)) {
                 val remaining = maxRows - candles.size
                 if (remaining <= 0) break
                 candles.addAll(chunk.take(remaining))
             }
         }
+        require(candles.size >= 2) { "O arquivo precisa conter pelo menos duas velas válidas." }
         dao.touchDataset(id, System.currentTimeMillis())
         candles
     }
