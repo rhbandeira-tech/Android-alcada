@@ -32,6 +32,7 @@ class ResearchEngine {
         // workerCount also defines the bounded batch target; candidate state remains deterministic.
         val batchSize = minOf(workerCount * 4, 64)
         val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
+        require(memoryBound >= workerCount) { "A memória reservada é insuficiente para a quantidade de processadores." }
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
         val evaluationSlots = Semaphore(workerCount)
         val progressStride = maxOf(25, effectiveBatch)
