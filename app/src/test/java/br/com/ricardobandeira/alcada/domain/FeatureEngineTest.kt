@@ -97,4 +97,11 @@ class FeatureEngineTest {
         )
         assertEquals(-2, FeatureEngine.candleColorSequence(candles))
     }
+
+    @Test
+    fun `sessao usa horario UTC de forma deterministica`() {
+        val epoch = java.time.Instant.parse("2026-09-20T09:00:00Z").toEpochMilli()
+        assertEquals(9, FeatureEngine.sessionHour(epoch))
+        assertEquals("Europa", FeatureEngine.sessionLabel(epoch))
+    }
 }
