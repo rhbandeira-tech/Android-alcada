@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.Flow
 @Entity(tableName = "research_runs")
 data class ResearchRunEntity(@PrimaryKey val id: String, val startedAt: Long, val finishedAt: Long?, val status: String, val progress: Int, val seed: Long, val configurationJson: String)
 
-@Entity(tableName = "strategies", indices = [Index("researchRunId")])
+@Entity(tableName = "strategies", indices = [Index("researchRunId"), Index("createdAt")])
 data class StrategyEntity(@PrimaryKey val id: String, val researchRunId: String?, val name: String, val market: String, val symbol: String, val profile: String, val definitionJson: String, val createdAt: Long)
 
-@Entity(tableName = "backtests", indices = [Index("strategyId"), Index("datasetId")])
+@Entity(tableName = "backtests", indices = [Index("strategyId"), Index("datasetId"), Index("createdAt")])
 data class BacktestEntity(@PrimaryKey val id: String, val strategyId: String, val datasetId: String, val market: String, val metricsJson: String, val tradesJson: String, val equityJson: String, val createdAt: Long)
 
 @Entity(tableName = "validation_results", indices = [Index("strategyId")])
