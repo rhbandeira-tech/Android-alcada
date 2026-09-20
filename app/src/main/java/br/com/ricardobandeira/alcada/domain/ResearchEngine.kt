@@ -27,10 +27,13 @@ class ResearchEngine {
         val workerCount = budget.threads.coerceIn(1, availableProcessors)
         // workerCount also defines the bounded batch target; candidate state remains deterministic.
         val batchSize = minOf(workerCount * 4, 64)
-        val memoryBound = (budget.memoryMb.coerceAtLeast(64) * 1024L * 1024L / 64_000L).toInt().coerceAtLeast(workerCount)
-        require(memoryBound >= workerCount) { "A memória reservada é insuficiente para a quantidade de processadores." }
+        val estimatedBytesPerEvaluation = (candles.size.toLong() * 96L).coerceAtLeast(1L)
+        val memoryBytes = budget.memoryMb.toLong() * 1024L * 1024L
+        val memoryBound = (memoryBytes / estimatedBytesPerEvaluation).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        require(memoryBound >= 1) { "A memória reservada é insuficiente para avaliar este conjunto de dados." }
+        val effectiveWorkers = minOf(workerCount, memoryBound).coerceAtLeast(1)
         val effectiveBatch = minOf(batchSize, memoryBound).coerceAtLeast(1)
-        val evaluationSlots = Semaphore(workerCount)
+        val evaluationSlots = Semaphore(effectiveWorkers)
         val progressStride = maxOf(25, effectiveBatch)
         suspend fun evaluateBacktests(
             source: List<Candle>,
