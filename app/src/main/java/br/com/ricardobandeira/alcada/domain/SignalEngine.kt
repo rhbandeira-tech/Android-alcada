@@ -7,7 +7,7 @@ object SignalEngine {
         require(limit > 0)
         if (candles.size < 3) return emptyList()
         return (1 until candles.lastIndex).asSequence().filter { index ->
-            val feature = FeatureEngine.candle(candles[index], candles[index - 1])
+            val feature = FeatureEngine.candle(candles[index], candles[index - 1], candles.getOrNull(index - 2))
             feature.wickBodyRatio >= minimumRatio &&
                 if (direction == Direction.CALL || direction == Direction.LONG) feature.lowerWick >= feature.upperWick
                 else feature.upperWick > feature.lowerWick
