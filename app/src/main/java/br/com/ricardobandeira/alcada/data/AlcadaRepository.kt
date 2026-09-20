@@ -81,6 +81,16 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
             profile(result).name, encodeStrategy(result), System.currentTimeMillis()))
     }
 
+    suspend fun saveResearchLeaders(runId: String, datasetId: String, results: List<EvaluatedStrategy>) {
+        results.groupBy(::profile).forEach { (_, candidates) ->
+            candidates.sortedByDescending(::researchScore).take(3).forEach { saveResearch(runId, datasetId, it) }
+        }
+    }
+
+    private fun researchScore(value: EvaluatedStrategy): Double =
+        value.robustness * .55 + value.metrics.expectancy.coerceIn(-1.0, 1.0) * .30 -
+            value.metrics.maxDrawdown * .02 - if (value.overfitWarning) .15 else 0.0
+
     private fun profile(value: EvaluatedStrategy): Profile = when {
         value.status == ValidationStatus.VALIDATED && value.robustness >= .8 -> Profile.CONSERVATIVE
         value.status == ValidationStatus.VALIDATED -> Profile.MODERATE
