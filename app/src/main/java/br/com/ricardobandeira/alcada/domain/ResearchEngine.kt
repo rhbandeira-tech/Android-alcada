@@ -35,16 +35,15 @@ class ResearchEngine {
             else .50 + random.nextDouble() * .35
             val eliteExpiry = parent?.strategy?.exit?.bars
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
-            // Signals use only the current/past candle; the future is consulted exclusively by the backtest.
-            val signals = (1 until candles.size - expiration).asSequence()
-                .filter {
-                    val feature = FeatureEngine.candle(candles[it], candles[it - 1])
-                    val directionalClose = if (direction == Direction.CALL) feature.closeLocation >= closeLocation
-                        else feature.closeLocation <= 1.0 - closeLocation
-                    feature.wickBodyRatio >= ratio && feature.bodyRangeRatio <= bodyLimit && directionalClose &&
-                        if (direction == Direction.CALL) feature.lowerWick >= feature.upperWick else feature.upperWick > feature.lowerWick
-                }
-                .map { it to direction }.take(5_000).toList()
+            // SignalEngine centralizes the no-lookahead entry rules used by research and manual tests.
+            val signals = SignalEngine.filteredWickSignals(
+                candles = candles,
+                direction = direction,
+                minimumWickBodyRatio = ratio,
+                maximumBodyRangeRatio = bodyLimit,
+                minimumDirectionalClose = closeLocation,
+                limit = 5_000
+            )
             val split = (candles.size * .7).toInt()
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
             val insSignals = signals.filter { it.first + expiration < split }
