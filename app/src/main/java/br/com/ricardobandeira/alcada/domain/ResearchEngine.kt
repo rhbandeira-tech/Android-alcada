@@ -24,6 +24,15 @@ class ResearchEngine {
             val eliteRule = parent?.strategy?.entries?.firstOrNull()
             val ratio = if (eliteRule != null && n % 3 != 0) (eliteRule.threshold + random.nextGaussian() * .35).coerceIn(.25, 8.0) else 0.5 + random.nextDouble() * 4.5
             val direction = if (parent != null && n % 4 != 0) parent.strategy.direction else if (random.nextBoolean()) Direction.CALL else Direction.PUT
+            val parentBodyLimit = parent?.strategy?.entries?.firstOrNull { it.feature == "bodyRangeRatio" }?.threshold
+            val bodyLimit = if (parentBodyLimit != null && n % 3 != 0)
+                (parentBodyLimit + random.nextGaussian() * .05).coerceIn(.15, .80)
+            else .25 + random.nextDouble() * .45
+            val storedClose = parent?.strategy?.entries?.firstOrNull { it.feature == "closeLocation" }?.threshold
+            val parentClose = storedClose?.let { if (parent?.strategy?.direction == Direction.PUT) 1.0 - it else it }
+            val closeLocation = if (parentClose != null && n % 3 != 0)
+                (parentClose + random.nextGaussian() * .04).coerceIn(.50, .90)
+            else .50 + random.nextDouble() * .35
             val eliteExpiry = parent?.strategy?.exit?.bars
             val expiration = if (eliteExpiry != null && n % 5 != 0) (eliteExpiry + random.nextInt(3) - 1).coerceIn(1, 12) else 1 + random.nextInt(8)
             // Signals use only the current/past candle; the future is consulted exclusively by the backtest.
