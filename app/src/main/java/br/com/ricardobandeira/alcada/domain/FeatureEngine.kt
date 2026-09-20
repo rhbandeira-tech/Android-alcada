@@ -3,7 +3,7 @@ package br.com.ricardobandeira.alcada.domain
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-data class CandleFeatures(val body: Double, val upperWick: Double, val lowerWick: Double, val wickBodyRatio: Double, val wickRangeRatio: Double, val range: Double, val momentum: Double, val gap: Double)
+data class CandleFeatures(val body: Double, val upperWick: Double, val lowerWick: Double, val wickBodyRatio: Double, val wickRangeRatio: Double, val range: Double, val momentum: Double, val gap: Double, val bodyRangeRatio: Double, val closeLocation: Double)
 
 object FeatureEngine {
     fun candle(current: Candle, previous: Candle? = null): CandleFeatures {
@@ -11,7 +11,7 @@ object FeatureEngine {
         val wick = current.upperWick + current.lowerWick
         return CandleFeatures(current.body, current.upperWick, current.lowerWick,
             wick / maxOf(current.body, epsilon), wick / maxOf(current.range, epsilon), current.range,
-            previous?.let { current.close - it.close } ?: 0.0, previous?.let { current.open - it.close } ?: 0.0)
+            previous?.let { current.close - it.close } ?: 0.0, previous?.let { current.open - it.close } ?: 0.0,\n            current.body / maxOf(current.range, epsilon), (current.close - current.low) / maxOf(current.range, epsilon)
     }
 
     fun atr(candles: List<Candle>, period: Int, endExclusive: Int = candles.size): Double {
