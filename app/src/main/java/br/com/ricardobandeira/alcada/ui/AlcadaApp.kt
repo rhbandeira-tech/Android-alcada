@@ -371,10 +371,10 @@ private fun chartExplanation(title: String): String = when {
     title.contains("Taxa de acerto") -> "Mostra como a taxa de acerto muda no tempo. Quedas prolongadas podem indicar mudança de regime. Configure o mesmo período, direção, filtros e expiração ou saída do teste."
     title.contains("Distribuição") -> "Mostra como os resultados das operações se distribuem. Ajuda a identificar dependência de poucas operações excepcionais."
     title.contains("horário") -> "Compara o resultado por hora UTC. Converta o horário da plataforma para UTC antes de aplicar um filtro de sessão."
-    title.contains("dia × hora") -> "Combina dia e hora. Valores positivos marcam janelas historicamente melhores e negativos janelas piores. Use como filtro estatístico, não como garantia."
+    title.contains("dia × hora") -> "Combina dia e hora em UTC. Deslize horizontalmente para comparar todas as janelas. Na plataforma, configure o mesmo ativo e período da estratégia, converta o relógio para UTC e use a janela junto das demais regras de entrada."
     title.contains("Dentro") -> "Compara dados usados no desenvolvimento com dados posteriores não usados na criação. Menor deterioração fora da amostra é evidência de maior estabilidade."
     title.contains("expiração") -> "Compara período gráfico e expiração. Configure ambos exatamente como indicados na estratégia."
-    title.contains("pavio") -> "Relaciona proporção do pavio e movimento posterior. Use a razão indicada como condição de entrada junto aos demais filtros."
+    title.contains("pavio") -> "Relaciona a proporção do pavio ao movimento posterior. No gráfico, compare o pavio com o corpo da vela, aplique o limite indicado nas regras e confirme direção, período e expiração ou saída antes do sinal."
     else -> "Este painel resume evidência histórica. As estratégias detalham ativo, período gráfico, direção, filtros e parâmetros para reprodução."
 }
 
