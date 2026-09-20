@@ -462,7 +462,7 @@ private fun StrategyScriptActions(strategy: StrategyEntity, data: List<String>) 
 
 private fun strategyScript(strategy: StrategyEntity, data: List<String>, language: String): String {
     val rules = data.getOrNull(12)?.split('&')?.filter { it.isNotBlank() }.orEmpty()
-    val converted = rules.map { it to scriptRule(it, language) }
+    val converted = rules.map { it to scriptRule(it, language, data.getOrNull(9)) }
     val expressions = converted.mapNotNull { it.second }
     val unsupported = converted.filter { it.second == null }.map { ruleDescription(it.first) }
     val condition = if (expressions.isEmpty() || unsupported.isNotEmpty()) "false" else expressions.joinToString(if (language == "MQL5") " && " else " and ")
@@ -475,7 +475,7 @@ private fun strategyScript(strategy: StrategyEntity, data: List<String>, languag
     }
 }
 
-private fun scriptRule(encoded: String, language: String): String? {
+private fun scriptRule(encoded: String, language: String, direction: String? = null): String? {
     val p = encoded.split(':')
     val feature = p.getOrNull(0) ?: return null
     val op = p.getOrNull(1) ?: return null
@@ -490,7 +490,7 @@ private fun scriptRule(encoded: String, language: String): String? {
         "accelerationRangeRatio" -> "(math.abs((close-close[1])-(close[1]-close[2]))/math.max(high-low,syminfo.mintick))"
         "atrRangeRatio" -> "(ta.atr(14)/math.max(high-low,syminfo.mintick))"
         "candleSequence" -> "(close>open ? (close[1]>open[1] ? (close[2]>open[2] ? 3.0 : 2.0) : 1.0) : (close[1]<open[1] ? (close[2]<open[2] ? -3.0 : -2.0) : -1.0))"
-        "levelDistanceRatio" -> return null
+        "levelDistanceRatio" -> if (direction == "PUT") "(math.abs(close-ta.lowest(low,20))/math.max(high-low,syminfo.mintick))" else "(math.abs(ta.highest(high,20)-close)/math.max(high-low,syminfo.mintick))"
         else -> return null
     }
     return expression + " " + op + " " + value
