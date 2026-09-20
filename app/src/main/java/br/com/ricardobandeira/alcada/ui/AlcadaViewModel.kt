@@ -117,7 +117,7 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                     val ratio = progress.evaluated.toFloat() / budget
                     _researchState.value = OperationState(true, ratio, "${progress.evaluated} candidatos avaliados • ${progress.accepted} passaram pelo filtro inicial")
                     dao.saveRun(ResearchRunEntity(runId, started, if (progress.finished) System.currentTimeMillis() else null, if (progress.finished) "COMPLETED" else "RUNNING", (ratio * 100).toInt(), 42, "budget=$budget"))
-                    if (progress.finished) progress.best?.let { repository.saveResearch(runId, datasetId, it) }
+                    if (progress.finished) repository.saveResearchLeaders(runId, datasetId, progress.leaders)
                 }
             }.onSuccess { _researchState.value = OperationState(progress = 1f, message = "Pesquisa concluída") }
                 .onFailure { error ->
