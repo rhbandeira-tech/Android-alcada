@@ -47,7 +47,7 @@ class ResearchEngine {
             val split = (candles.size * .7).toInt()
             // Purge the boundary by the full outcome horizon so no trade can leak future candles across IS/OOS.
             val insSignals = signals.filter { it.first + expiration < split }
-            val oosSignals = signals.filter { it.first >= split }
+            val oosSignals = signals.filter { it.first > split }
             val ins = BacktestEngine.binary(candles, insSignals, expiration, .8)
             val oos = BacktestEngine.binary(candles, oosSignals, expiration, .8)
             if (ins.trades >= budget.minimumTrades && oos.trades >= budget.minimumTrades && ins.profitFactor > 1.0) {
@@ -70,7 +70,7 @@ class ResearchEngine {
                 }
                 val stability = stableFolds / forwardTests.size.toDouble()
                 val robustness = ((1.0 - gap * 2).coerceIn(0.0, 1.0) * .55 + stability * .35 + sampleFactor * .10).coerceIn(0.0, 1.0)
-                val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(ratio)}×", Market.BINARY_OPTIONS,
+                val strategy = StrategyDefinition("${budget.seed}-$n", "Pavio ${"%.2f".format(java.util.Locale.US, ratio)}×", Market.BINARY_OPTIONS,
                     "dataset", 1, direction, listOf(
                         EntryRule("wickBodyRatio", ">=", ratio),
                         EntryRule("bodyRangeRatio", "<=", bodyLimit),
