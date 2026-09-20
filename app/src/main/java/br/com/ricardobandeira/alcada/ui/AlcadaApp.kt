@@ -309,6 +309,13 @@ private fun StrategyCard(strategy: StrategyEntity) {
                 encoded.split('&').take(4).forEach { rule ->
                     Text("• " + ruleDescription(rule), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                val rationale = when (strategy.profile) {
+                    "CONSERVATIVE" -> "Classificação: evidência mais estável, robustez elevada e vantagem fora da amostra."
+                    "MODERATE" -> "Classificação: validação fora da amostra positiva, com robustez intermediária."
+                    "AGGRESSIVE" -> "Classificação: resultado esperado positivo, porém com menor robustez estatística."
+                    else -> "Classificação: hipótese experimental; exige mais validação antes de qualquer uso prático."
+                }
+                Text(rationale, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Desempenho histórico não garante resultados futuros. A validação fora da amostra reduz, mas não elimina, o risco de sobreajuste.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
