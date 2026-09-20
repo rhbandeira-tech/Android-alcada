@@ -309,21 +309,18 @@ private fun HeatmapCard(values: List<Bucket>) {
 @Composable
 private fun LineChart(title: String, values: List<Double>, color: Color) {
     ChartCard(title) {
-        if (values.size < 2) {
-            Text("Dados insuficientes para este gráfico", color = Pending)
-        } else {
+        if (values.size < 2) Text("Dados insuficientes para este gráfico", color = Pending) else {
             Canvas(Modifier.fillMaxWidth().height(130.dp)) {
                 val minimum = values.min()
                 val range = max(1e-9, values.max() - minimum)
-                values.zipWithNext().forEachIndexed { index, (start, end) ->
-                    drawLine(
-                        color = color,
-                        start = Offset(size.width * index / (values.size - 1), size.height * (1 - ((start - minimum) / range)).toFloat()),
-                        end = Offset(size.width * (index + 1) / (values.size - 1), size.height * (1 - ((end - minimum) / range)).toFloat()),
-                        strokeWidth = 4f,
-                    )
+                values.zipWithNext().forEachIndexed { index, pair ->
+                    drawLine(color, Offset(size.width * index / (values.size - 1), size.height * (1 - ((pair.first - minimum) / range)).toFloat()), Offset(size.width * (index + 1) / (values.size - 1), size.height * (1 - ((pair.second - minimum) / range)).toFloat()), strokeWidth = 4f)
                 }
             }
+            val first = values.first()
+            val last = values.last()
+            Text("Início " + number(first) + " • Final " + number(last) + " • Mínimo " + number(values.min()) + " • Máximo " + number(values.max()), style = MaterialTheme.typography.bodySmall)
+            Text("Variação: " + number(last - first), color = if (last >= first) Positive else Negative, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
         }
     }
 }
