@@ -72,4 +72,14 @@ class BacktestEngineTest {
         assertEquals(1.0 / 1.85, result.metrics.breakEvenWinRate ?: 0.0, 1e-12)
         assertEquals(.85, result.metrics.netProfit, 1e-12)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `regra rejeita operador desconhecido`() {
+        EntryRule("momentum", "!=", 1.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `saida rejeita limite de velas zero`() {
+        ExitRule(bars = 0)
+    }
 }
