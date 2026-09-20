@@ -16,6 +16,7 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
     val backtests: Flow<List<BacktestEntity>> = dao.backtests()
 
     suspend fun importBatch(items: List<Pair<Uri, String>>, onProgress: (Int, Int, String) -> Unit): Pair<DatasetEntity, ImportSummary> = withContext(Dispatchers.IO) {
+        require(items.isNotEmpty()) { "Selecione pelo menos um arquivo para importar." }
         val id = UUID.randomUUID().toString()
         val directory = File(context.filesDir, "datasets").apply { mkdirs() }
         val target = File(directory, "$id.csv")
@@ -32,7 +33,6 @@ class AlcadaRepository(private val context: Context, private val dao: AlcadaDao)
             target.delete()
             throw IllegalArgumentException("São necessárias pelo menos duas velas válidas.")
         }
-        require(items.isNotEmpty()) { "Selecione pelo menos um arquivo para importar." }
         val label = if (items.size == 1) items.first().second else "Importação de ${items.size} arquivos"
         val entity = DatasetEntity(id, label, label.substringBeforeLast('.').uppercase(), "LOCAL", 1,
             requireNotNull(summary.firstEpochMillis), requireNotNull(summary.lastEpochMillis), target.absolutePath,
