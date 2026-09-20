@@ -164,9 +164,11 @@ class AlcadaViewModel(application: Application) : AndroidViewModel(application) 
                 repository.saveBacktest(id, options.market, result)
                 result
             }.onSuccess {
+                backtestJob = null
                 _result.value = it
                 _backtestState.value = OperationState(message = "Teste histórico concluído")
             }.onFailure {
+                backtestJob = null
                 if (it is kotlinx.coroutines.CancellationException) _backtestState.value = OperationState(message = "Teste histórico cancelado")
                 else failBacktest(friendlyError(it))
             }
